@@ -9,7 +9,9 @@ public class InMemoryUserStore {
 
     public InMemoryUserStore() {
         userMap.put("user1", "1234");
-        userMap.put("user2", "1234");
+        userMap.put("user2", "2345");
+        userMap.put("user3", "3456");
+        userMap.put("user4", "4567");
     }
 
     public boolean exists(String username) {

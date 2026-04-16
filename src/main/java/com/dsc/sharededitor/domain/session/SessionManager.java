@@ -32,4 +32,16 @@ public class SessionManager {
     public int getOnlineUserCount() {
         return usernameToSessionId.size();
     }
+
+    public void removeUserByUsername(String username) {
+        String sessionId = usernameToSessionId.get(username);
+        if (sessionId != null) {
+            usernameToSessionId.remove(username);
+            sessionIdToUsername.remove(sessionId);
+        }
+    }
+
+    public String getSessionIdByUsername(String username) {
+        return usernameToSessionId.get(username);
+    }
 }

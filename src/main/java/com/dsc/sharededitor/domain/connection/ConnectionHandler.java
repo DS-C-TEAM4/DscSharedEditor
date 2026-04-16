@@ -4,7 +4,7 @@ import com.dsc.sharededitor.domain.auth.InMemoryUserStore;
 import com.dsc.sharededitor.domain.session.SessionManager;
 import com.dsc.sharededitor.dto.message.LoginRequestMessage;
 import com.dsc.sharededitor.dto.message.LoginResponseMessage;
-import com.dsc.sharededitor.dto.message.MessageType;
+import com.dsc.sharededitor.dto.message.LogoutRequestMessage;
 
 public class ConnectionHandler {
 
@@ -35,5 +35,14 @@ public class ConnectionHandler {
         sessionManager.addUser(username, sessionId);
 
         return LoginResponseMessage.success(username);
+    }
+
+    public void handleLogout(LogoutRequestMessage request) {
+        String username = request.getUsername();
+        sessionManager.removeUserByUsername(username);
+    }
+
+    public void handleDisconnect(String sessionId) {
+        sessionManager.removeUserBySessionId(sessionId);
     }
 }

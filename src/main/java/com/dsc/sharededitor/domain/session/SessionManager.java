@@ -44,4 +44,8 @@ public class SessionManager {
     public String getSessionIdByUsername(String username) {
         return usernameToSessionId.get(username);
     }
+
+    public Map<String, String> getAllUsernameToSessionId() {
+        return new ConcurrentHashMap<>(usernameToSessionId);
+    }
 }

@@ -45,4 +45,8 @@ public class ConnectionHandler {
     public void handleDisconnect(String sessionId) {
         sessionManager.removeUserBySessionId(sessionId);
     }
+
+    public String getUsernameBySessionId(String sessionId) {
+        return sessionManager.getUsernameBySessionId(sessionId);
+    }
 }

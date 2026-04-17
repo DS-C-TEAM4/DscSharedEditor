@@ -10,10 +10,14 @@ public class SocketServer {
 
     private final int port;
     private final ConnectionGateway connectionGateway;
+    private final ClientOutputRegistry clientOutputRegistry;
 
-    public SocketServer(int port, ConnectionGateway connectionGateway) {
+    public SocketServer(int port,
+                        ConnectionGateway connectionGateway,
+                        ClientOutputRegistry clientOutputRegistry) {
         this.port = port;
         this.connectionGateway = connectionGateway;
+        this.clientOutputRegistry = clientOutputRegistry;
     }
 
     public void start() {
@@ -25,7 +29,11 @@ public class SocketServer {
                 System.out.println("[SocketServer] 클라이언트 연결 수락: " + clientSocket.getRemoteSocketAddress());
 
                 ClientConnectionHandler handler =
-                        new ClientConnectionHandler(clientSocket, connectionGateway);
+                        new ClientConnectionHandler(
+                                clientSocket,
+                                connectionGateway,
+                                clientOutputRegistry
+                        );
                 Thread thread = new Thread(handler);
                 thread.start();
             }

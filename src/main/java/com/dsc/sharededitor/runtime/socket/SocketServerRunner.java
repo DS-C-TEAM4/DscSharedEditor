@@ -24,15 +24,19 @@ public class SocketServerRunner implements CommandLineRunner {
         MessageBroadcaster messageBroadcaster =
                 new MessageBroadcaster(sessionManager);
 
+        ClientOutputRegistry clientOutputRegistry =
+                new ClientOutputRegistry();
+
         ConnectionGateway connectionGateway =
                 new ConnectionGateway(
                         messageParser,
                         connectionHandler,
-                        messageBroadcaster
+                        messageBroadcaster,
+                        clientOutputRegistry
                 );
 
         SocketServer socketServer =
-                new SocketServer(12345, connectionGateway);
+                new SocketServer(12345, connectionGateway, clientOutputRegistry);
 
         Thread serverThread = new Thread(socketServer::start);
         serverThread.start();

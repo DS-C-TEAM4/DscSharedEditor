@@ -39,4 +39,11 @@ public class LoginResponseMessage extends BaseMessage {
     public void setMessage(String message) {
         this.message = message;
     }
+
+    @Override
+    public String toString() {
+        return "{type=" + getType()
+                + ", success=" + success
+                + ", message='" + message + "'}";
+    }
 }

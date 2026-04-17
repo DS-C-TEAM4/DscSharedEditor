@@ -41,7 +41,7 @@ public class ClientConnectionHandler implements Runnable {
                         connectionGateway.handleMessage(sessionId, line);
 
                 if (result != null) {
-                    writer.println(result.toString());
+                    writer.println("[응답] " + result);
                 }
             }
 

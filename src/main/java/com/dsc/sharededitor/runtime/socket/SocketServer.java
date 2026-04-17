@@ -4,12 +4,16 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import com.dsc.sharededitor.domain.connection.ConnectionGateway;
+
 public class SocketServer {
 
     private final int port;
+    private final ConnectionGateway connectionGateway;
 
-    public SocketServer(int port) {
+    public SocketServer(int port, ConnectionGateway connectionGateway) {
         this.port = port;
+        this.connectionGateway = connectionGateway;
     }
 
     public void start() {
@@ -20,7 +24,8 @@ public class SocketServer {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("[SocketServer] 클라이언트 연결 수락: " + clientSocket.getRemoteSocketAddress());
 
-                ClientConnectionHandler handler = new ClientConnectionHandler(clientSocket);
+                ClientConnectionHandler handler =
+                        new ClientConnectionHandler(clientSocket, connectionGateway);
                 Thread thread = new Thread(handler);
                 thread.start();
             }

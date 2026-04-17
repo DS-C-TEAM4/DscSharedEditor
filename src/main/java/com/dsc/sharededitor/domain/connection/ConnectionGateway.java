@@ -5,7 +5,7 @@ import com.dsc.sharededitor.domain.message.MessageParser;
 import com.dsc.sharededitor.dto.message.BaseMessage;
 import com.dsc.sharededitor.dto.message.LoginRequestMessage;
 import com.dsc.sharededitor.dto.message.LoginResponseMessage;
-import com.dsc.sharededitor.dto.message.LogoutRequestMessage;
+
 import com.dsc.sharededitor.dto.message.MessageType;
 import com.dsc.sharededitor.dto.message.ServerNotificationMessage;
 import com.dsc.sharededitor.runtime.socket.ClientOutputRegistry;
@@ -60,21 +60,21 @@ public class ConnectionGateway {
         }
 
         if (messageType == MessageType.LOGOUT_REQUEST) {
-            LogoutRequestMessage request = messageParser.parseMessage(rawMessage, LogoutRequestMessage.class);
+            String logoutUsername = connectionHandler.handleLogout(sessionId);
 
-            ServerNotificationMessage leftMessage =
-                    messageBroadcaster.createUserLeftMessage(request.getUsername());
+            if (logoutUsername != null) {
+                ServerNotificationMessage leftMessage =
+                        messageBroadcaster.createUserLeftMessage(logoutUsername);
 
-            connectionHandler.handleLogout(request);
+                List<String> targets =
+                        messageBroadcaster.getBroadcastTargetSessionIds(sessionId, false);
 
-            List<String> targets =
-                    messageBroadcaster.getBroadcastTargetSessionIds(sessionId, false);
-
-            for (String targetSessionId : targets) {
-                clientOutputRegistry.sendToSession(
-                        targetSessionId,
-                        "[알림] " + leftMessage
-                );
+                for (String targetSessionId : targets) {
+                    clientOutputRegistry.sendToSession(
+                            targetSessionId,
+                            "[알림] " + leftMessage
+                    );
+                }
             }
 
             return null;

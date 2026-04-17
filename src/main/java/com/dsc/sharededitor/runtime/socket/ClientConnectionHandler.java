@@ -1,7 +1,6 @@
 package com.dsc.sharededitor.runtime.socket;
 
 import com.dsc.sharededitor.domain.connection.ConnectionGateway;
-import com.dsc.sharededitor.dto.message.LogoutRequestMessage;
 
 import java.io.BufferedReader;
 import java.io.IOException;

@@ -17,15 +17,15 @@ public class MessageBroadcaster {
 
     public List<String> getBroadcastTargetSessionIds(String senderSessionId, boolean includeSender) {
         Map<String, String> usernameToSessionId = sessionManager.getAllUsernameToSessionId();
-        List<String> targetSessionIds = new ArrayList<>();
+        List<String> result = new ArrayList<>();
 
         for (String sessionId : usernameToSessionId.values()) {
             if (includeSender || !sessionId.equals(senderSessionId)) {
-                targetSessionIds.add(sessionId);
+                result.add(sessionId);
             }
         }
 
-        return targetSessionIds;
+        return result;
     }
 
     public ServerNotificationMessage createUserJoinedMessage(String username) {

@@ -3,13 +3,16 @@ package com.dsc.sharededitor.controller;
 import com.dsc.sharededitor.dto.request.LoginRequest;
 import com.dsc.sharededitor.dto.response.LoginResponse;
 import com.dsc.sharededitor.service.AuthService;
+import com.dsc.sharededitor.dto.response.UserStatusNotification;
+
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+import org.springframework.context.event.EventListener;
+import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
-import com.dsc.sharededitor.dto.response.UserStatusNotification;
 
 @Controller
 public class AuthController {
@@ -42,6 +45,31 @@ public class AuthController {
                             request.getUsername(),
                             "JOINED",
                             request.getUsername() + "님이 접속했습니다."
+                    )
+            );
+        }
+    }
+
+    @MessageMapping("/auth/logout")
+    public void logout(SimpMessageHeaderAccessor headerAccessor) {
+        handleLeave(headerAccessor.getSessionId(), "로그아웃");
+    }
+
+    @EventListener
+    public void handleDisconnect(SessionDisconnectEvent event) {
+        handleLeave(event.getSessionId(), "연결 종료");
+    }
+
+    private void handleLeave(String sessionId, String reason) {
+        String username = authService.logout(sessionId);
+
+        if (username != null) {
+            messagingTemplate.convertAndSend(
+                    "/topic/global",
+                    new UserStatusNotification(
+                            username,
+                            "LEFT",
+                            username + "님이 접속 해제했습니다. (" + reason + ")"
                     )
             );
         }

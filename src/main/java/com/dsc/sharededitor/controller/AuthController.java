@@ -9,6 +9,8 @@ import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
+import com.dsc.sharededitor.dto.response.UserStatusNotification;
+
 @Controller
 public class AuthController {
 
@@ -32,5 +34,16 @@ public class AuthController {
                 "/topic/user/" + request.getUsername(),
                 response
         );
+
+        if (response.isSuccess()) {
+            messagingTemplate.convertAndSend(
+                    "/topic/global",
+                    new UserStatusNotification(
+                            request.getUsername(),
+                            "JOINED",
+                            request.getUsername() + "님이 접속했습니다."
+                    )
+            );
+        }
     }
 }

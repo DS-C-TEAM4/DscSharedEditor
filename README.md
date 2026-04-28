@@ -27,3 +27,23 @@
 
 ```bash
 ./gradlew bootRun
+```
+
+## STOMP 프로토콜
+
+| 구분 | 경로 | 설명 |
+|---|---|---|
+| Endpoint | `/ws` | WebSocket 연결 |
+| Send | `/app/auth/login` | 로그인 요청 |
+| Send | `/app/auth/logout` | 로그아웃 요청 |
+| Subscribe | `/topic/user/{username}` | 로그인 결과 개인 응답 |
+| Subscribe | `/topic/global` | 접속/해제 알림 브로드캐스트 |
+
+## 테스트 계정
+
+| 아이디 | 비밀번호 |
+|---|---|
+| user1 | 1234 |
+| user2 | 2345 |
+| user3 | 3456 |
+| user4 | 4567 |

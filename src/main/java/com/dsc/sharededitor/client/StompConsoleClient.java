@@ -115,20 +115,23 @@ public class StompConsoleClient {
         String password = scanner.nextLine().trim();
 
         pendingUsername = inputUsername;
-
         send("/app/auth/login", new LoginRequest(clientId, inputUsername, password));
+    }
+
+    private void logout() {
+        if (username == null) {
+            System.out.println("[Client] 로그인 상태가 아닙니다.");
+            return;
+        }
+
+        send("/app/auth/logout", Map.of());
+        username = null;
+        pendingUsername = null;
     }
 
     private void insertText(Scanner scanner) {
         if (username == null) {
             System.out.println("[Client] 로그인 후 사용하세요.");
-            return;
-        }
-
-        System.out.print("문서 ID: ");
-        String documentId = scanner.nextLine().trim();
-        if (documentId.isEmpty()) {
-            System.out.println("[Client] 문서 ID를 입력하세요.");
             return;
         }
 
@@ -146,21 +149,10 @@ public class StompConsoleClient {
         String text = scanner.nextLine();
 
         if (position < 0) {
-            position = Integer.MAX_VALUE; // 서버에서 length로 클램핑됨
+            position = Integer.MAX_VALUE;
         }
 
-        send("/app/document/insert", new TextInsertRequest(documentId, position, text));
-    }
-
-    private void logout() {
-        if (username == null) {
-            System.out.println("[Client] 로그인 상태가 아닙니다.");
-            return;
-        }
-
-        send("/app/auth/logout", Map.of());
-        username = null;
-        pendingUsername = null;
+        send("/app/document/insert", new TextInsertRequest(position, text));
     }
 
     private void handleServerMessage(String json) {
@@ -172,7 +164,7 @@ public class StompConsoleClient {
 
             switch (type) {
                 case "LOGIN_RESPONSE"  -> handleLoginResponse(json);
-                case "USER_STATUS"    -> handleUserStatus(json);
+                case "USER_STATUS"     -> handleUserStatus(json);
                 case "DOCUMENT_UPDATE" -> handleDocumentUpdate(json);
                 default -> System.out.println("[서버] " + json);
             }
@@ -199,15 +191,13 @@ public class StompConsoleClient {
     private void handleUserStatus(String json) throws Exception {
         UserStatusNotification notification =
                 objectMapper.readValue(json, UserStatusNotification.class);
-
         System.out.println("[알림] " + notification.getMessage());
     }
 
     private void handleDocumentUpdate(String json) throws Exception {
         DocumentUpdateNotification update =
                 objectMapper.readValue(json, DocumentUpdateNotification.class);
-
-        System.out.println("[문서:" + update.getDocumentId() + " " + update.getOperation() + "] " + update.getUsername() + "님이 수정했습니다.");
+        System.out.println("[" + update.getUsername() + "님이 수정했습니다.]");
         System.out.println("--- 현재 문서 내용 ---");
         System.out.println(update.getContent().isEmpty() ? "(비어 있음)" : update.getContent());
         System.out.println("---------------------");

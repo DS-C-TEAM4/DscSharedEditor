@@ -4,8 +4,12 @@ import com.dsc.sharededitor.model.Document;
 import com.dsc.sharededitor.repository.DocumentRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class DocumentService {
+
+    public static final Long DEFAULT_DOCUMENT_ID = 1L;
 
     private final DocumentRepository documentRepository;
 
@@ -13,15 +17,15 @@ public class DocumentService {
         this.documentRepository = documentRepository;
     }
 
-    public String insert(String documentId, int position, String text) {
-        Document document = documentRepository.getOrCreate(documentId);
-        document.insert(position, text);
-        return document.getContent();
+    public Optional<String> insert(String username, int position, String text) {
+        return documentRepository.findById(DEFAULT_DOCUMENT_ID)
+                .map(doc -> {
+                    doc.insert(position, text);
+                    return doc.getContent();
+                });
     }
 
-    public String getContent(String documentId) {
-        return documentRepository.findById(documentId)
-                .map(Document::getContent)
-                .orElse("");
+    public Optional<Document> findById(Long documentId) {
+        return documentRepository.findById(documentId);
     }
 }

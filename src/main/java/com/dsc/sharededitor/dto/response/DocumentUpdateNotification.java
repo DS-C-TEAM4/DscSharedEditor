@@ -9,15 +9,15 @@ import lombok.Setter;
 @NoArgsConstructor
 public class DocumentUpdateNotification {
     private final String type = "DOCUMENT_UPDATE";
-    private String documentId;
+    private Long documentId;
     private String operation;
     private String username;
     private String content;
 
-    public DocumentUpdateNotification(String documentId, String operation, String username, String content) {
+    public DocumentUpdateNotification(Long documentId, String operation, String username, String content) {
         this.documentId = documentId;
-        this.operation = operation;
-        this.username = username;
-        this.content = content;
+        this.operation  = operation;
+        this.username   = username;
+        this.content    = content;
     }
 }

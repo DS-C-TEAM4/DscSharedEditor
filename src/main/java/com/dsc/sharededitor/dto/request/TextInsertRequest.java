@@ -10,7 +10,6 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TextInsertRequest {
-    private String documentId;
     private int position;
     private String text;
 }

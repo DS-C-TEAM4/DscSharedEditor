@@ -29,18 +29,16 @@ public class DocumentController {
     @MessageMapping("/document/insert")
     public void insert(@Payload TextInsertRequest request,
                        SimpMessageHeaderAccessor headerAccessor) {
-        String sessionId = headerAccessor.getSessionId();
-        String username  = sessionRegistry.getUsername(sessionId);
+        String username = sessionRegistry.getUsername(headerAccessor.getSessionId());
+        if (username == null) return;
 
-        if (username == null) {
-            return;
-        }
-
-        String updatedContent = documentService.insert(request.getDocumentId(), request.getPosition(), request.getText());
-
-        messagingTemplate.convertAndSend(
-                "/topic/document",
-                new DocumentUpdateNotification(request.getDocumentId(), "INSERT", username, updatedContent)
-        );
+        documentService.insert(username, request.getPosition(), request.getText())
+                .ifPresent(updatedContent ->
+                        messagingTemplate.convertAndSend(
+                                "/topic/document",
+                                new DocumentUpdateNotification(
+                                        DocumentService.DEFAULT_DOCUMENT_ID, "INSERT", username, updatedContent)
+                        )
+                );
     }
 }

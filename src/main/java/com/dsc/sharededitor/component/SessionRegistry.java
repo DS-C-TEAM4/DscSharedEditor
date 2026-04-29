@@ -5,25 +5,25 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * WebSocket 세션 ID ↔ 사용자명 양방향 매핑 관리.
- * Spring이 관리하는 싱글톤 빈이므로 모든 컨트롤러/서비스에서 공유된다.
- */
 @Component
 public class SessionRegistry {
 
     private final Map<String, String> sessionToUsername = new ConcurrentHashMap<>();
     private final Map<String, String> usernameToSession = new ConcurrentHashMap<>();
+    private final Map<String, String> usernameToClientId = new ConcurrentHashMap<>();
 
-    public void register(String sessionId, String username) {
+    public void register(String sessionId, String username, String clientId) {
         sessionToUsername.put(sessionId, username);
         usernameToSession.put(username, sessionId);
+        usernameToClientId.put(username, clientId);
     }
 
-    /** 세션 제거 후 매핑된 사용자명 반환 (없으면 null) */
     public String removeBySessionId(String sessionId) {
         String username = sessionToUsername.remove(sessionId);
-        if (username != null) usernameToSession.remove(username);
+        if (username != null) {
+            usernameToSession.remove(username);
+            usernameToClientId.remove(username);
+        }
         return username;
     }
 
@@ -31,8 +31,8 @@ public class SessionRegistry {
         return sessionToUsername.get(sessionId);
     }
 
-    public String getSessionId(String username) {
-        return usernameToSession.get(username);
+    public String getClientId(String username) {
+        return usernameToClientId.get(username);
     }
 
     public boolean isOnline(String username) {

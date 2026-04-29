@@ -27,7 +27,7 @@ public class AuthService {
         if (sessionRegistry.isOnline(username))
             return LoginResponse.fail("이미 접속 중인 계정입니다.");
 
-        sessionRegistry.register(sessionId, username);
+        sessionRegistry.register(sessionId, username, request.getClientId());
         return LoginResponse.success(username);
     }
 

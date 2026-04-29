@@ -25,6 +25,14 @@ public class DocumentService {
                 });
     }
 
+    public Optional<String> update(String username, int position, int length, String text) {
+        return documentRepository.findById(DEFAULT_DOCUMENT_ID)
+                .map(doc -> {
+                    doc.update(position, length, text);
+                    return doc.getContent();
+                });
+    }
+
     public Optional<Document> findById(Long documentId) {
         return documentRepository.findById(documentId);
     }

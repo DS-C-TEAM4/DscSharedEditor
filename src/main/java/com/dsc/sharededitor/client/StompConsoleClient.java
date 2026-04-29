@@ -2,6 +2,7 @@ package com.dsc.sharededitor.client;
 
 import com.dsc.sharededitor.dto.request.LoginRequest;
 import com.dsc.sharededitor.dto.request.TextInsertRequest;
+import com.dsc.sharededitor.dto.request.TextUpdateRequest;
 import com.dsc.sharededitor.dto.response.DocumentUpdateNotification;
 import com.dsc.sharededitor.dto.response.LoginResponse;
 import com.dsc.sharededitor.dto.response.UserStatusNotification;
@@ -70,6 +71,7 @@ public class StompConsoleClient {
                     case "1" -> login(scanner);
                     case "2" -> logout();
                     case "3" -> insertText(scanner);
+                    case "4" -> updateText(scanner);
                     case "0" -> {
                         if (session != null && session.isConnected()) {
                             session.disconnect();
@@ -93,6 +95,7 @@ public class StompConsoleClient {
         System.out.println("1. 로그인");
         System.out.println("2. 로그아웃");
         System.out.println("3. 텍스트 추가");
+        System.out.println("4. 텍스트 수정");
         System.out.println("0. 종료");
         System.out.print("선택: ");
     }
@@ -153,6 +156,36 @@ public class StompConsoleClient {
         }
 
         send("/app/document/insert", new TextInsertRequest(position, text));
+    }
+
+    private void updateText(Scanner scanner) {
+        if (username == null) {
+            System.out.println("[Client] 로그인 후 사용하세요.");
+            return;
+        }
+
+        System.out.print("수정 시작 위치: ");
+        int position;
+        try {
+            position = Integer.parseInt(scanner.nextLine().trim());
+        } catch (NumberFormatException e) {
+            System.out.println("[Client] 올바른 숫자를 입력하세요.");
+            return;
+        }
+
+        System.out.print("수정할 글자 수: ");
+        int length;
+        try {
+            length = Integer.parseInt(scanner.nextLine().trim());
+        } catch (NumberFormatException e) {
+            System.out.println("[Client] 올바른 숫자를 입력하세요.");
+            return;
+        }
+
+        System.out.print("새 텍스트: ");
+        String text = scanner.nextLine();
+
+        send("/app/document/update", new TextUpdateRequest(position, length, text));
     }
 
     private void handleServerMessage(String json) {

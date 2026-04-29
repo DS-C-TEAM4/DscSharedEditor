@@ -40,6 +40,12 @@ public class Document {
         content.insert(clamped, text);
     }
 
+    public synchronized void update(int position, int length, String text) {
+        int start = Math.max(0, Math.min(position, content.length()));
+        int end   = Math.max(start, Math.min(position + length, content.length()));
+        content.replace(start, end, text);
+    }
+
     public synchronized String getContent() {
         return content.toString();
     }

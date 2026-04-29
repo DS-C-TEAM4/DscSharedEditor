@@ -18,14 +18,17 @@ import tools.jackson.databind.ObjectMapper;
 import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class StompConsoleClient {
 
     private StompSession session;
     private String username;
+    private String pendingUsername;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final String clientId = UUID.randomUUID().toString();
 
     public void start() throws Exception {
         WebSocketStompClient stompClient = new WebSocketStompClient(new StandardWebSocketClient());
@@ -47,6 +50,7 @@ public class StompConsoleClient {
         ).get(10, TimeUnit.SECONDS);
 
         session.subscribe("/topic/global", new RawFrameHandler());
+        session.subscribe("/topic/client/" + clientId, new RawFrameHandler());
 
         Scanner scanner = new Scanner(System.in);
         runMenu(scanner);
@@ -63,7 +67,11 @@ public class StompConsoleClient {
                     case "1" -> login(scanner);
                     case "2" -> logout();
                     case "0" -> {
-                        logout();
+                        if (session != null && session.isConnected()) {
+                            session.disconnect();
+                        }
+                        username = null;
+                        pendingUsername = null;
                         System.out.println("[Client] 종료합니다.");
                         return;
                     }
@@ -85,25 +93,36 @@ public class StompConsoleClient {
     }
 
     private void login(Scanner scanner) {
+        if (username != null) {
+            System.out.println("[Client] 이미 로그인 중입니다. 먼저 로그아웃하세요.");
+            return;
+        }
+
+        if (pendingUsername != null) {
+            System.out.println("[Client] 로그인 요청 처리 중입니다.");
+            return;
+        }
+
         System.out.print("아이디: ");
         String inputUsername = scanner.nextLine().trim();
 
         System.out.print("비밀번호: ");
         String password = scanner.nextLine().trim();
 
-        session.subscribe("/topic/user/" + inputUsername, new RawFrameHandler());
+        pendingUsername = inputUsername;
 
-        username = inputUsername;
-        send("/app/auth/login", new LoginRequest(inputUsername, password));
+        send("/app/auth/login", new LoginRequest(clientId, inputUsername, password));
     }
 
     private void logout() {
         if (username == null) {
+            System.out.println("[Client] 로그인 상태가 아닙니다.");
             return;
         }
 
         send("/app/auth/logout", Map.of());
         username = null;
+        pendingUsername = null;
     }
 
     private void handleServerMessage(String json) {
@@ -129,10 +148,12 @@ public class StompConsoleClient {
         LoginResponse response = objectMapper.readValue(json, LoginResponse.class);
 
         if (response.isSuccess()) {
+            username = response.getUsername();
+            pendingUsername = null;
             System.out.println("[로그인] 성공: " + response.getUsername());
         } else {
+            pendingUsername = null;
             System.out.println("[로그인] 실패: " + response.getMessage());
-            username = null;
         }
     }
 

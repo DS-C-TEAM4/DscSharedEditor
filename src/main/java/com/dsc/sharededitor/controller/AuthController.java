@@ -34,7 +34,7 @@ public class AuthController {
         LoginResponse response = authService.login(sessionId, request);
 
         messagingTemplate.convertAndSend(
-                "/topic/user/" + request.getUsername(),
+                "/topic/client/" + request.getClientId(),
                 response
         );
 

@@ -43,3 +43,9 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+tasks.register('runClient', JavaExec) {
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'com.dsc.sharededitor.client.ConsoleClientRunner'
+	standardInput = System.in
+}

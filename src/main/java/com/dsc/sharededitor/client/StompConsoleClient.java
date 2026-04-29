@@ -1,6 +1,8 @@
 package com.dsc.sharededitor.client;
 
 import com.dsc.sharededitor.dto.request.LoginRequest;
+import com.dsc.sharededitor.dto.request.TextInsertRequest;
+import com.dsc.sharededitor.dto.response.DocumentUpdateNotification;
 import com.dsc.sharededitor.dto.response.LoginResponse;
 import com.dsc.sharededitor.dto.response.UserStatusNotification;
 import org.springframework.messaging.Message;
@@ -51,6 +53,7 @@ public class StompConsoleClient {
 
         session.subscribe("/topic/global", new RawFrameHandler());
         session.subscribe("/topic/client/" + clientId, new RawFrameHandler());
+        session.subscribe("/topic/document", new RawFrameHandler());
 
         Scanner scanner = new Scanner(System.in);
         runMenu(scanner);
@@ -66,6 +69,7 @@ public class StompConsoleClient {
                 switch (command) {
                     case "1" -> login(scanner);
                     case "2" -> logout();
+                    case "3" -> insertText(scanner);
                     case "0" -> {
                         if (session != null && session.isConnected()) {
                             session.disconnect();
@@ -88,6 +92,7 @@ public class StompConsoleClient {
         System.out.println("=== 메뉴 === " + (username != null ? "[" + username + "]" : ""));
         System.out.println("1. 로그인");
         System.out.println("2. 로그아웃");
+        System.out.println("3. 텍스트 추가");
         System.out.println("0. 종료");
         System.out.print("선택: ");
     }
@@ -114,6 +119,39 @@ public class StompConsoleClient {
         send("/app/auth/login", new LoginRequest(clientId, inputUsername, password));
     }
 
+    private void insertText(Scanner scanner) {
+        if (username == null) {
+            System.out.println("[Client] 로그인 후 사용하세요.");
+            return;
+        }
+
+        System.out.print("문서 ID: ");
+        String documentId = scanner.nextLine().trim();
+        if (documentId.isEmpty()) {
+            System.out.println("[Client] 문서 ID를 입력하세요.");
+            return;
+        }
+
+        System.out.print("삽입 위치 (0부터 시작, 끝에 추가하려면 -1): ");
+        String posInput = scanner.nextLine().trim();
+        int position;
+        try {
+            position = Integer.parseInt(posInput);
+        } catch (NumberFormatException e) {
+            System.out.println("[Client] 올바른 숫자를 입력하세요.");
+            return;
+        }
+
+        System.out.print("추가할 텍스트: ");
+        String text = scanner.nextLine();
+
+        if (position < 0) {
+            position = Integer.MAX_VALUE; // 서버에서 length로 클램핑됨
+        }
+
+        send("/app/document/insert", new TextInsertRequest(documentId, position, text));
+    }
+
     private void logout() {
         if (username == null) {
             System.out.println("[Client] 로그인 상태가 아닙니다.");
@@ -133,8 +171,9 @@ public class StompConsoleClient {
             System.out.println();
 
             switch (type) {
-                case "LOGIN_RESPONSE" -> handleLoginResponse(json);
-                case "USER_STATUS" -> handleUserStatus(json);
+                case "LOGIN_RESPONSE"  -> handleLoginResponse(json);
+                case "USER_STATUS"    -> handleUserStatus(json);
+                case "DOCUMENT_UPDATE" -> handleDocumentUpdate(json);
                 default -> System.out.println("[서버] " + json);
             }
         } catch (Exception e) {
@@ -162,6 +201,16 @@ public class StompConsoleClient {
                 objectMapper.readValue(json, UserStatusNotification.class);
 
         System.out.println("[알림] " + notification.getMessage());
+    }
+
+    private void handleDocumentUpdate(String json) throws Exception {
+        DocumentUpdateNotification update =
+                objectMapper.readValue(json, DocumentUpdateNotification.class);
+
+        System.out.println("[문서:" + update.getDocumentId() + " " + update.getOperation() + "] " + update.getUsername() + "님이 수정했습니다.");
+        System.out.println("--- 현재 문서 내용 ---");
+        System.out.println(update.getContent().isEmpty() ? "(비어 있음)" : update.getContent());
+        System.out.println("---------------------");
     }
 
     private void send(String destination, Object payload) {

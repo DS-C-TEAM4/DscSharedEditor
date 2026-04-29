@@ -6,7 +6,8 @@
 
 - 다중 클라이언트가 서버에 접속
 - 사용자 접속 상태 공유
-- 이후 실시간 공동 편집 기능 확장 예정
+- 단일 공유 문서에 대한 실시간 공동 편집
+- 이후 다중 문서 생성 및 사용자 초대, 동시성 제어 기능 확장 예정
 
 ## 중간 구현 기능
 
@@ -16,18 +17,43 @@
 - 클라이언트 종료 감지
 - 접속 / 해제 상태 브로드캐스트
 
+
+### 공유 문서 편집
+
+- 텍스트 추가: 지정한 위치에 텍스트 삽입
+- 텍스트 수정: 지정한 위치의 글자를 새 텍스트로 교체
+- 텍스트 삭제: 지정한 위치부터 글자 수만큼 삭제
+- 편집 결과를 모든 클라이언트에 실시간 공유
+
 ## 기술 스택
 
 - Java 21
 - Spring Boot
-- WebSocket
-- STOMP
+- WebSocket/STOMP
 
 ## 실행 방법
 
+서버와 클라이언트를 별도 터미널에서 실행합니다.
+
+**터미널 1 — 서버**
 ```bash
 ./gradlew bootRun
 ```
+**터미널 2, 3, ... — 클라이언트 (각각 별도 터미널)**
+```bash
+./gradlew runClient --console=plain
+```
+
+## 클라이언트 메뉴
+
+| 번호 | 기능 | 설명 |
+|---|---|---|
+| 1 | 로그인 | 아이디 / 비밀번호 입력 |
+| 2 | 로그아웃 | 현재 세션 종료 |
+| 3 | 텍스트 추가 | 위치(0부터 시작, -1이면 끝) + 텍스트 입력 |
+| 4 | 텍스트 수정 | 시작 위치 + 글자 수 + 새 텍스트 입력 |
+| 5 | 텍스트 삭제 | 시작 위치 + 글자 수 입력 |
+| 0 | 종료 | |
 
 ## STOMP 프로토콜
 
@@ -36,8 +62,12 @@
 | Endpoint | `/ws` | WebSocket 연결 |
 | Send | `/app/auth/login` | 로그인 요청 |
 | Send | `/app/auth/logout` | 로그아웃 요청 |
-| Subscribe | `/topic/user/{username}` | 로그인 결과 개인 응답 |
+| Send | `/app/document/insert` | 텍스트 추가 |
+| Send | `/app/document/update` | 텍스트 수정 |
+| Send | `/app/document/delete` | 텍스트 삭제 |
+| Subscribe | `/topic/client/{clientId}` | 로그인 결과 개인 응답 |
 | Subscribe | `/topic/global` | 접속/해제 알림 브로드캐스트 |
+| Subscribe | `/topic/document` | 문서 편집 결과 브로드캐스트 |
 
 ## 테스트 계정
 

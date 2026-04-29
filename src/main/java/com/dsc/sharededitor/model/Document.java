@@ -46,6 +46,12 @@ public class Document {
         content.replace(start, end, text);
     }
 
+    public synchronized void delete(int position, int length) {
+        int start = Math.max(0, Math.min(position, content.length()));
+        int end   = Math.max(start, Math.min(position + length, content.length()));
+        content.delete(start, end);
+    }
+
     public synchronized String getContent() {
         return content.toString();
     }

@@ -33,6 +33,14 @@ public class DocumentService {
                 });
     }
 
+    public Optional<String> delete(String username, int position, int length) {
+        return documentRepository.findById(DEFAULT_DOCUMENT_ID)
+                .map(doc -> {
+                    doc.delete(position, length);
+                    return doc.getContent();
+                });
+    }
+
     public Optional<Document> findById(Long documentId) {
         return documentRepository.findById(documentId);
     }

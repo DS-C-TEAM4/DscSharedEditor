@@ -1,6 +1,7 @@
 package com.dsc.sharededitor.controller;
 
 import com.dsc.sharededitor.component.SessionRegistry;
+import com.dsc.sharededitor.dto.request.TextDeleteRequest;
 import com.dsc.sharededitor.dto.request.TextInsertRequest;
 import com.dsc.sharededitor.dto.request.TextUpdateRequest;
 import com.dsc.sharededitor.dto.response.DocumentUpdateNotification;
@@ -39,6 +40,22 @@ public class DocumentController {
                                 "/topic/document",
                                 new DocumentUpdateNotification(
                                         DocumentService.DEFAULT_DOCUMENT_ID, "INSERT", username, updatedContent)
+                        )
+                );
+    }
+
+    @MessageMapping("/document/delete")
+    public void delete(@Payload TextDeleteRequest request,
+                       SimpMessageHeaderAccessor headerAccessor) {
+        String username = sessionRegistry.getUsername(headerAccessor.getSessionId());
+        if (username == null) return;
+
+        documentService.delete(username, request.getPosition(), request.getLength())
+                .ifPresent(updatedContent ->
+                        messagingTemplate.convertAndSend(
+                                "/topic/document",
+                                new DocumentUpdateNotification(
+                                        DocumentService.DEFAULT_DOCUMENT_ID, "DELETE", username, updatedContent)
                         )
                 );
     }

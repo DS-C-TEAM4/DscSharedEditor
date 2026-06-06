@@ -1,4 +1,4 @@
-import { postJson } from "./http";
+import { stompClient } from "./stompClient";
 
 export interface TextInsertRequest {
   position: number;
@@ -26,26 +26,23 @@ export interface DocumentUpdateNotification {
 
 export const documentApi = {
   insert(request: TextInsertRequest) {
-    // STOMP /app/document/insert 기준
-    return postJson<TextInsertRequest, DocumentUpdateNotification>(
-      "/api/document/insert",
-      request,
-    );
+    stompClient.publish("/app/document/insert", request);
   },
 
   update(request: TextUpdateRequest) {
-    // STOMP /app/document/update 기준
-    return postJson<TextUpdateRequest, DocumentUpdateNotification>(
-      "/api/document/update",
-      request,
-    );
+    stompClient.publish("/app/document/update", request);
   },
 
   delete(request: TextDeleteRequest) {
-    // STOMP /app/document/delete 기준
-    return postJson<TextDeleteRequest, DocumentUpdateNotification>(
-      "/api/document/delete",
-      request,
+    stompClient.publish("/app/document/delete", request);
+  },
+
+  subscribeDocumentUpdates(
+    handler: (message: DocumentUpdateNotification) => void,
+  ) {
+    return stompClient.subscribe<DocumentUpdateNotification>(
+      "/topic/document",
+      handler,
     );
   },
 };

@@ -1,4 +1,4 @@
-import { postJson } from "./http";
+import { stompClient } from "./stompClient";
 
 export interface LoginRequest {
   clientId: string;
@@ -21,11 +21,28 @@ export interface UserStatusNotification {
 }
 
 export const authApi = {
-  login(request: LoginRequest) {
-    return postJson<LoginRequest, LoginResponse>("/api/auth/login", request);
+  sendLogin(request: LoginRequest) {
+    stompClient.publish("/app/auth/login", request);
   },
 
-  logout() {
-    return postJson<Record<string, never>, void>("/api/auth/logout", {});
+  sendLogout() {
+    stompClient.publish("/app/auth/logout", {});
+  },
+
+  subscribeLoginResponse(
+    clientId: string,
+    handler: (response: LoginResponse) => void,
+  ) {
+    return stompClient.subscribe<LoginResponse>(
+      `/topic/client/${clientId}`,
+      handler,
+    );
+  },
+
+  subscribeUserStatus(handler: (message: UserStatusNotification) => void) {
+    return stompClient.subscribe<UserStatusNotification>(
+      "/topic/global",
+      handler,
+    );
   },
 };

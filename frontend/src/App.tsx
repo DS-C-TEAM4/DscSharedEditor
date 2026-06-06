@@ -12,12 +12,22 @@ import {
   mockParticipants,
   mockSessions,
 } from "./mockData";
+import { DocumentLine } from "./types";
 
 type Screen = "login" | "sessionEntry" | "editor";
+
+function renumberLines(lines: DocumentLine[]) {
+  return lines.map((line, index) => ({
+    ...line,
+    lineNumber: index + 1,
+  }));
+}
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("login");
   const [username, setUsername] = useState("user1");
+  const [lines, setLines] = useState<DocumentLine[]>(mockLines);
+  const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
 
   const handleLogin = (nextUsername: string) => {
     setUsername(nextUsername);
@@ -26,6 +36,82 @@ export default function App() {
 
   const openEditor = () => {
     setScreen("editor");
+  };
+
+  const handleLineSelect = (lineId: string) => {
+    setSelectedLineId(lineId);
+    setLines((prev) =>
+      prev.map((line) => {
+        if (line.editor && line.editor !== username) return line;
+        return line.lineId === lineId
+          ? { ...line, editor: username }
+          : line.editor === username
+            ? { ...line, editor: null }
+            : line;
+      }),
+    );
+  };
+
+  const handleLineTextChange = (lineId: string, nextText: string) => {
+    setLines((prev) =>
+      prev.map((line) =>
+        line.lineId === lineId
+          ? { ...line, text: nextText, editor: username }
+          : line,
+      ),
+    );
+  };
+
+  const handleAddLineBelow = () => {
+    if (!selectedLineId) return;
+
+    setLines((prev) => {
+      const selectedIndex = prev.findIndex(
+        (line) => line.lineId === selectedLineId,
+      );
+      if (selectedIndex < 0) return prev;
+
+      const newLine: DocumentLine = {
+        lineId: `line-${Date.now()}`,
+        lineNumber: selectedIndex + 2,
+        text: "",
+        editor: username,
+      };
+
+      const nextLines = [
+        ...prev.slice(0, selectedIndex + 1),
+        newLine,
+        ...prev.slice(selectedIndex + 1),
+      ];
+
+      setSelectedLineId(newLine.lineId);
+      return renumberLines(nextLines);
+    });
+  };
+
+  const handleAddLineAtEnd = () => {
+    const newLine: DocumentLine = {
+      lineId: `line-${Date.now()}`,
+      lineNumber: lines.length + 1,
+      text: "",
+      editor: username,
+    };
+
+    setLines((prev) => renumberLines([...prev, newLine]));
+    setSelectedLineId(newLine.lineId);
+  };
+
+  const handleDeleteSelectedLine = () => {
+    if (!selectedLineId || lines.length <= 1) return;
+
+    setLines((prev) => {
+      const selectedLine = prev.find((line) => line.lineId === selectedLineId);
+      if (selectedLine?.editor && selectedLine.editor !== username) return prev;
+
+      const nextLines = prev.filter((line) => line.lineId !== selectedLineId);
+      setSelectedLineId(null);
+      return renumberLines(nextLines);
+    });
   };
 
   if (screen === "login") {
@@ -60,7 +146,13 @@ export default function App() {
         <DocumentEditor
           title="공유 문서 편집기"
           currentUser={username}
-          lines={mockLines}
+          lines={lines}
+          selectedLineId={selectedLineId}
+          onLineSelect={handleLineSelect}
+          onLineTextChange={handleLineTextChange}
+          onAddLineBelow={handleAddLineBelow}
+          onAddLineAtEnd={handleAddLineAtEnd}
+          onDeleteSelectedLine={handleDeleteSelectedLine}
         />
         <StatusPanel participants={mockParticipants} events={mockEventLogs} />
       </div>

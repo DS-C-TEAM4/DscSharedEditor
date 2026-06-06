@@ -220,3 +220,37 @@ textarea[readonly] { color: #57534e; cursor: not-allowed; }
   border-color: #c7d2fe;
   background: #eef2ff;
 }
+
+.secondary-button:disabled,
+.add-line-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.secondary-button.danger {
+  color: #b91c1c;
+}
+
+.line-row {
+  cursor: pointer;
+}
+
+.line-row.locked {
+  cursor: not-allowed;
+}
+
+.line-row.selected textarea {
+  cursor: text;
+}
+
+.line-row:not(.selected) textarea {
+  cursor: pointer;
+}
+
+.line-row.locked textarea {
+  cursor: not-allowed;
+}
+
+textarea::placeholder {
+  color: #a8a29e;
+}

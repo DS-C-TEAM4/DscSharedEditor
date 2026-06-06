@@ -1,4 +1,4 @@
-﻿export type SaveStatus = "저장됨" | "저장되지 않음";
+﻿export type SaveStatus = "서버 저장됨" | "저장 필요";
 export type SessionStatus = "active" | "saved";
 export type EventLogType = "info" | "success" | "warning";
 
@@ -28,9 +28,10 @@ export interface EventLogMessage {
   timestamp: string;
   type: EventLogType;
 }
-
 export interface TextSessionState extends TextSessionItem {
   lines: DocumentLine[];
+  participants: Participant[];
+  eventLogs: EventLogMessage[];
   saveStatus: SaveStatus;
   lastEditor: string;
 }

@@ -10,7 +10,7 @@ export const mockLines: DocumentLine[] = [
   { lineId: "line-1", lineNumber: 1, text: "공유 텍스트 편집 시스템은 여러 클라이언트가 동일한 텍스트 세션에 참여해 문서를 함께 수정하는 시스템이다.", editor: null },
   { lineId: "line-2", lineNumber: 2, text: "Late-comer 클라이언트는 세션에 늦게 참여해도 서버로부터 현재 문서 상태를 전달받아 동일한 화면을 확인할 수 있다.", editor: "user2" },
   { lineId: "line-3", lineNumber: 3, text: "동시성 제어는 줄 단위 critical section을 기준으로 하며, 같은 줄은 동시에 한 사용자만 편집할 수 있도록 표시한다.", editor: "user1" },
-  { lineId: "line-4", lineNumber: 4, text: "편집 과정 공유를 위해 편집 시작, 편집 종료, 추가, 수정, 삭제, 저장 이벤트를 우측 로그 패널에 표시한다.", editor: null }
+  { lineId: "line-4", lineNumber: 4, text: "편집 과정 공유를 위해 편집 시작, 편집 종료, 추가, 수정, 삭제, 세션 저장 이벤트를 우측 로그 패널에 표시한다.", editor: null }
 ];
 
 export const mockParticipants: Participant[] = [

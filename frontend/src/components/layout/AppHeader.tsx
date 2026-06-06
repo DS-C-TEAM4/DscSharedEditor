@@ -1,4 +1,4 @@
-﻿import { Home, LogOut, Save } from "lucide-react";
+﻿import { Download, Home, LogOut, Save } from "lucide-react";
 import { SaveStatus } from "../../types";
 
 interface AppHeaderProps {
@@ -8,6 +8,7 @@ interface AppHeaderProps {
   lastEditor: string;
   onHome: () => void;
   onSave: () => void;
+  onDownloadJson: () => void;
   onLogout: () => void;
 }
 
@@ -18,6 +19,7 @@ export function AppHeader({
   lastEditor,
   onHome,
   onSave,
+  onDownloadJson,
   onLogout,
 }: AppHeaderProps) {
   return (
@@ -34,7 +36,7 @@ export function AppHeader({
       <div className="header-right">
         <span
           className={
-            saveStatus === "저장됨"
+            saveStatus === "서버 저장됨"
               ? "status-pill saved"
               : "status-pill unsaved"
           }
@@ -42,8 +44,11 @@ export function AppHeader({
           {saveStatus}
         </span>
         <span className="muted">마지막 편집: {lastEditor}</span>
+        <button className="secondary-button" onClick={onDownloadJson}>
+          <Download size={16} /> JSON 내보내기
+        </button>
         <button className="primary-button" onClick={onSave}>
-          <Save size={16} /> 저장
+          <Save size={16} /> 세션 저장
         </button>
         <button className="secondary-button" onClick={onLogout}>
           <LogOut size={16} /> 로그아웃

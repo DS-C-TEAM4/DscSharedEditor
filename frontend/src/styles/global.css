@@ -254,3 +254,21 @@ textarea[readonly] { color: #57534e; cursor: not-allowed; }
 textarea::placeholder {
   color: #a8a29e;
 }
+
+.icon-button:hover,
+.small-button:hover,
+.secondary-button:hover,
+.session-item:hover {
+  border-color: #c7d2fe;
+  background: #eef2ff;
+}
+
+.profile-chip::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+}

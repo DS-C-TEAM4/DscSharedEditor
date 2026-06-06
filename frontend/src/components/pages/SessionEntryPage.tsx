@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { TextSessionItem } from "../../types";
 
 interface SessionEntryPageProps {
@@ -5,7 +6,7 @@ interface SessionEntryPageProps {
   sessions: TextSessionItem[];
   onCreateBlank: () => void;
   onJoinSession: (documentNumber: string) => void;
-  onOpenEditor: () => void;
+  onOpenEditor: (documentNumber: string) => void;
 }
 
 export function SessionEntryPage({
@@ -15,6 +16,8 @@ export function SessionEntryPage({
   onJoinSession,
   onOpenEditor,
 }: SessionEntryPageProps) {
+  const [documentNumber, setDocumentNumber] = useState("38172946");
+
   return (
     <main className="session-page">
       <header className="session-page-header">
@@ -41,10 +44,14 @@ export function SessionEntryPage({
             Late-comer 클라이언트가 현재 문서 상태를 받는 흐름을 확인합니다.
           </p>
           <div className="join-row">
-            <input defaultValue="38172946" aria-label="문서 번호" />
+            <input
+              value={documentNumber}
+              aria-label="문서 번호"
+              onChange={(event) => setDocumentNumber(event.target.value)}
+            />
             <button
               className="secondary-button"
-              onClick={() => onJoinSession("38172946")}
+              onClick={() => onJoinSession(documentNumber)}
             >
               참여
             </button>
@@ -65,7 +72,7 @@ export function SessionEntryPage({
             <button
               className="active-session-item"
               key={session.sessionId}
-              onClick={onOpenEditor}
+              onClick={() => onOpenEditor(session.documentNumber)}
             >
               <span className="doc-number">#{session.documentNumber}</span>
               <strong>{session.title}</strong>

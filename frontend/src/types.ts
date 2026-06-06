@@ -28,3 +28,9 @@ export interface EventLogMessage {
   timestamp: string;
   type: EventLogType;
 }
+
+export interface TextSessionState extends TextSessionItem {
+  lines: DocumentLine[];
+  saveStatus: SaveStatus;
+  lastEditor: string;
+}

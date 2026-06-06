@@ -2,6 +2,7 @@
 
 interface DocumentEditorProps {
   title: string;
+  documentNumber: string;
   currentUser: string;
   lines: DocumentLine[];
   selectedLineId: string | null;
@@ -14,6 +15,7 @@ interface DocumentEditorProps {
 
 export function DocumentEditor({
   title,
+  documentNumber,
   currentUser,
   lines,
   selectedLineId,
@@ -28,7 +30,7 @@ export function DocumentEditor({
       <section className="document-card">
         <div className="document-header">
           <div>
-            <p className="eyebrow">lineId 기반 줄 단위 편집기</p>
+            <p className="eyebrow">문서 번호 {documentNumber}</p>
             <h2>{title}</h2>
           </div>
           <div className="document-actions">

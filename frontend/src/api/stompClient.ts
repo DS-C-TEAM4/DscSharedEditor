@@ -1,5 +1,4 @@
 import { Client, IMessage, StompSubscription } from "@stomp/stompjs";
-import SockJS from "sockjs-client";
 import { SOCKET_URL } from "./config";
 
 type MessageHandler<T> = (message: T) => void;
@@ -15,7 +14,7 @@ class StompClientManager {
     }
 
     this.client = new Client({
-      webSocketFactory: () => new SockJS(SOCKET_URL),
+      brokerURL: SOCKET_URL,
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,

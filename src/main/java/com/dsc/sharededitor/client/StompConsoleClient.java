@@ -80,26 +80,46 @@ public class StompConsoleClient {
         WebSocketStompClient stompClient = new WebSocketStompClient(new StandardWebSocketClient());
         stompClient.setMessageConverter(new JsonStringConverter());
 
-        session = stompClient.connectAsync(
-                "ws://localhost:8080/ws",
-                new StompSessionHandlerAdapter() {
-                    @Override
-                    public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
-                        System.out.println("[Client] 서버에 연결되었습니다.");
-                    }
-
-                    @Override
-                    public void handleTransportError(StompSession session, Throwable exception) {
-                        System.out.println("[Client] 연결 오류: " + exception.getMessage());
-                    }
-                }
-        ).get(10, TimeUnit.SECONDS);
+        session = connectWithRetry(stompClient);
 
         session.subscribe("/topic/global", new RawFrameHandler());
         session.subscribe("/topic/client/" + clientId, new RawFrameHandler());
 
         Scanner scanner = new Scanner(System.in);
         runMenu(scanner);
+    }
+
+    private StompSession connectWithRetry(WebSocketStompClient stompClient) throws Exception {
+        Exception lastError = null;
+
+        for (int attempt = 1; attempt <= 5; attempt++) {
+            try {
+                StompSession connectedSession = stompClient.connectAsync(
+                        "ws://localhost:8080/ws",
+                        new StompSessionHandlerAdapter() {
+                            @Override
+                            public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
+                                System.out.println("[Client] 서버에 연결되었습니다.");
+                            }
+
+                            @Override
+                            public void handleTransportError(StompSession session, Throwable exception) {
+                                System.out.println("[Client] 연결 오류: " + exception.getMessage());
+                            }
+                        }
+                ).get(10, TimeUnit.SECONDS);
+
+                return connectedSession;
+            } catch (Exception ex) {
+                lastError = ex;
+                System.out.println("[Client] WebSocket 연결 실패 (" + attempt + "/5): 서버가 실행 중인지 확인하세요.");
+                if (attempt < 5) {
+                    Thread.sleep(1000L);
+                }
+            }
+        }
+
+        throw lastError;
     }
 
     private void runMenu(Scanner scanner) {

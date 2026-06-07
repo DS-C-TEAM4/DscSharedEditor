@@ -1,9 +1,11 @@
 package com.dsc.sharededitor.controller;
 
 import com.dsc.sharededitor.dto.request.LoginRequest;
+import com.dsc.sharededitor.dto.response.DocumentPresenceNotification;
 import com.dsc.sharededitor.dto.response.LoginResponse;
 import com.dsc.sharededitor.service.AuthService;
 import com.dsc.sharededitor.dto.response.UserStatusNotification;
+import com.dsc.sharededitor.service.DocumentService;
 
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -18,11 +20,14 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 public class AuthController {
 
     private final AuthService authService;
+    private final DocumentService documentService;
     private final SimpMessagingTemplate messagingTemplate;
 
     public AuthController(AuthService authService,
+                          DocumentService documentService,
                           SimpMessagingTemplate messagingTemplate) {
         this.authService = authService;
+        this.documentService = documentService;
         this.messagingTemplate = messagingTemplate;
     }
 
@@ -64,6 +69,21 @@ public class AuthController {
         String username = authService.logout(sessionId);
 
         if (username != null) {
+            documentService.leaveDocuments(username).forEach(documentId ->
+                    documentService.getSnapshot(documentId).ifPresent(snapshot ->
+                            messagingTemplate.convertAndSend(
+                                    snapshot.getTopic(),
+                                    new DocumentPresenceNotification(
+                                            snapshot.getDocumentId(),
+                                            username,
+                                            "LEFT",
+                                            username + "님이 문서에서 나갔습니다. (" + reason + ")",
+                                            snapshot.getActiveParticipants()
+                                    )
+                            )
+                    )
+            );
+
             messagingTemplate.convertAndSend(
                     "/topic/global",
                     new UserStatusNotification(

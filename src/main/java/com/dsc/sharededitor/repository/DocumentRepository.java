@@ -4,7 +4,9 @@ import com.dsc.sharededitor.model.Document;
 import org.springframework.stereotype.Repository;
 
 import java.util.Map;
+import java.util.List;
 import java.util.Optional;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -31,5 +33,9 @@ public class DocumentRepository {
 
     public boolean exists(Long documentId) {
         return documents.containsKey(documentId);
+    }
+
+    public List<Document> findAll() {
+        return new ArrayList<>(documents.values());
     }
 }

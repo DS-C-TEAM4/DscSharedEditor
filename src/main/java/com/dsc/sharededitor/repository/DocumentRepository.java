@@ -2,6 +2,7 @@ package com.dsc.sharededitor.repository;
 
 import com.dsc.sharededitor.model.Document;
 import com.dsc.sharededitor.model.DocumentEditLog;
+import com.dsc.sharededitor.dto.response.SavedFileInfoResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,7 +13,10 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.FileTime;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -26,6 +30,10 @@ import java.util.stream.Stream;
 
 @Repository
 public class DocumentRepository {
+
+    private static final DateTimeFormatter FILE_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                    .withZone(ZoneId.systemDefault());
 
     private final ObjectMapper objectMapper;
     private final Path storageDir;
@@ -77,6 +85,18 @@ public class DocumentRepository {
         return new ArrayList<>(documents.values());
     }
 
+    public List<SavedFileInfoResponse> listSavedFiles() {
+        try (Stream<Path> stream = Files.list(storageDir)) {
+            return stream.filter(path -> path.getFileName().toString().endsWith(".json"))
+                    .map(this::toSavedFileInfo)
+                    .filter(info -> info.documentId() != null)
+                    .sorted(Comparator.comparing(SavedFileInfoResponse::documentId))
+                    .toList();
+        } catch (IOException ex) {
+            throw new UncheckedIOException("저장된 파일 목록을 읽을 수 없습니다.", ex);
+        }
+    }
+
     public synchronized void save(Document document) {
         documents.put(document.getDocumentId(), document);
         writeDocument(document);
@@ -107,6 +127,37 @@ public class DocumentRepository {
             }
         } catch (IOException ex) {
             throw new UncheckedIOException("문서를 저장할 수 없습니다: " + document.getDocumentId(), ex);
+        }
+    }
+
+    private SavedFileInfoResponse toSavedFileInfo(Path file) {
+        try {
+            String fileName = file.getFileName().toString();
+            Long documentId = parseDocumentId(fileName);
+            if (documentId == null) {
+                return new SavedFileInfoResponse(fileName, null, fileName, "");
+            }
+
+            Document document = documents.get(documentId);
+            String title = document != null ? document.getTitle() : fileName;
+            FileTime lastModifiedTime = Files.getLastModifiedTime(file);
+            String updatedAt = FILE_TIME_FORMATTER.format(lastModifiedTime.toInstant());
+            return new SavedFileInfoResponse(fileName, documentId, title, updatedAt);
+        } catch (IOException ex) {
+            throw new UncheckedIOException("저장된 파일 정보를 읽을 수 없습니다: " + file, ex);
+        }
+    }
+
+    private Long parseDocumentId(String fileName) {
+        if (fileName == null || !fileName.startsWith("document-") || !fileName.endsWith(".json")) {
+            return null;
+        }
+
+        String raw = fileName.substring("document-".length(), fileName.length() - ".json".length());
+        try {
+            return Long.parseLong(raw);
+        } catch (NumberFormatException ex) {
+            return null;
         }
     }
 

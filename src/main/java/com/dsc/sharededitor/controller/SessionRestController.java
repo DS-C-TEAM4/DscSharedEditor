@@ -2,7 +2,9 @@ package com.dsc.sharededitor.controller;
 
 import com.dsc.sharededitor.dto.request.SaveSessionRequest;
 import com.dsc.sharededitor.dto.response.SaveSessionResponse;
+import com.dsc.sharededitor.dto.response.SavedFileInfoResponse;
 import com.dsc.sharededitor.service.DocumentService;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,5 +32,10 @@ public class SessionRestController {
                 "document-" + documentId + ".json",
                 "세션을 파일로 저장했습니다."
         );
+    }
+
+    @GetMapping("/saved")
+    public java.util.List<SavedFileInfoResponse> savedFiles() {
+        return documentService.listSavedFiles();
     }
 }

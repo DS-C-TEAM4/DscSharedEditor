@@ -5,6 +5,7 @@ import com.dsc.sharededitor.model.Document;
 import com.dsc.sharededitor.dto.response.DocumentEditLogResponse;
 import com.dsc.sharededitor.dto.response.DocumentEditNotification;
 import com.dsc.sharededitor.dto.response.DocumentSnapshotResponse;
+import com.dsc.sharededitor.dto.response.SavedFileInfoResponse;
 import com.dsc.sharededitor.exception.DocumentEditException;
 import com.dsc.sharededitor.exception.DocumentNotFoundException;
 import com.dsc.sharededitor.dto.request.SaveSessionRequest;
@@ -143,6 +144,10 @@ public class DocumentService {
                 .sorted(Comparator.comparing(Document::getDocumentId))
                 .map(this::toSnapshot)
                 .collect(Collectors.toList());
+    }
+
+    public List<SavedFileInfoResponse> listSavedFiles() {
+        return documentRepository.listSavedFiles();
     }
 
     public Optional<Document> findById(Long documentId) {

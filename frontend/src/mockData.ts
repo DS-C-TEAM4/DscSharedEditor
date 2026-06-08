@@ -1,9 +1,9 @@
 ﻿import { DocumentLine, EventLogMessage, Participant, TextSessionItem } from "./types";
 
 export const mockSessions: TextSessionItem[] = [
-  { sessionId: "session-1", documentNumber: "38172946", title: "분산 시스템 최종 보고서 초안", participantCount: 3, status: "active" },
-  { sessionId: "session-2", documentNumber: "49281730", title: "시연 영상 대본", participantCount: 1, status: "saved" },
-  { sessionId: "session-3", documentNumber: "73492815", title: "회의 메모", participantCount: 2, status: "saved" }
+  { sessionId: "session-1", documentId: 38172946, title: "분산 시스템 최종 보고서 초안", participantCount: 3, status: "active" },
+  { sessionId: "session-2", documentId: 49281730, title: "시연 영상 대본", participantCount: 1, status: "saved" },
+  { sessionId: "session-3", documentId: 73492815, title: "회의 메모", participantCount: 2, status: "saved" }
 ];
 
 export const mockLines: DocumentLine[] = [
@@ -20,7 +20,7 @@ export const mockParticipants: Participant[] = [
 ];
 
 export const mockEventLogs: EventLogMessage[] = [
-  { message: "user1님이 문서 번호 38172946 세션에 참여했습니다.", timestamp: "23:18", type: "success" },
+  { message: "user1님이 문서 ID 38172946 세션에 참여했습니다.", timestamp: "23:18", type: "success" },
   { message: "서버로부터 현재 문서 상태를 수신했습니다. (Late-comer 동기화)", timestamp: "23:19", type: "success" },
   { message: "user2님이 line-2 편집을 시작했습니다.", timestamp: "23:20", type: "info" },
   { message: "user1님이 line-3 편집 권한을 획득했습니다.", timestamp: "23:21", type: "info" }

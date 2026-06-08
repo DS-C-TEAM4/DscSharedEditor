@@ -5,8 +5,8 @@ interface SessionEntryPageProps {
   username: string;
   sessions: TextSessionItem[];
   onCreateBlank: () => void;
-  onJoinSession: (documentNumber: string) => void;
-  onOpenEditor: (documentNumber: string) => void;
+  onJoinSession: (documentId: number) => void;
+  onOpenEditor: (documentId: number) => void;
   onLoadSavedSession: () => void;
   onImportJson: (file: File) => void;
 }
@@ -20,7 +20,7 @@ export function SessionEntryPage({
   onLoadSavedSession,
   onImportJson,
 }: SessionEntryPageProps) {
-  const [documentNumber, setDocumentNumber] = useState("38172946");
+  const [documentIdInput, setDocumentIdInput] = useState("38172946");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,13 +58,13 @@ export function SessionEntryPage({
           </p>
           <div className="join-row">
             <input
-              value={documentNumber}
-              aria-label="문서 번호"
-              onChange={(event) => setDocumentNumber(event.target.value)}
+              value={documentIdInput}
+              aria-label="문서 ID"
+              onChange={(event) => setDocumentIdInput(event.target.value)}
             />
             <button
               className="secondary-button"
-              onClick={() => onJoinSession(documentNumber)}
+              onClick={() => onJoinSession(Number(documentIdInput))}
             >
               참여
             </button>
@@ -110,9 +110,9 @@ export function SessionEntryPage({
             <button
               className="active-session-item"
               key={session.sessionId}
-              onClick={() => onOpenEditor(session.documentNumber)}
+              onClick={() => onOpenEditor(session.documentId)}
             >
-              <span className="doc-number">#{session.documentNumber}</span>
+              <span className="doc-number">#{session.documentId}</span>
               <strong>{session.title}</strong>
               <span className="muted">참여자 {session.participantCount}명</span>
             </button>

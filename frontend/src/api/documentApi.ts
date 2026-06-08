@@ -1,47 +1,100 @@
 import { stompClient } from "./stompClient";
 
 export interface TextInsertRequest {
-  position: number;
+  documentId: number;
+  lineNumber: number;
   text: string;
 }
 
 export interface TextUpdateRequest {
-  position: number;
-  length: number;
+  documentId: number;
+  lineNumber: number;
   text: string;
 }
 
 export interface TextDeleteRequest {
-  position: number;
-  length: number;
+  documentId: number;
+  lineNumber: number;
 }
 
 export interface DocumentUpdateNotification {
-  type: "DOCUMENT_UPDATE";
+  type: "DOCUMENT_EDIT";
   documentId: number;
   operation: "INSERT" | "UPDATE" | "DELETE";
   username: string;
   content: string;
+  lines: string[];
+  lineNumber: number;
+  logEntry?: {
+    sequence: number;
+    timestamp: string;
+    username: string;
+    operation: string;
+    lineNumber: number;
+    beforeText: string | null;
+    afterText: string | null;
+  } | null;
 }
+
+export interface DocumentPresenceNotification {
+  type: "DOCUMENT_PRESENCE";
+  documentId: number;
+  username: string;
+  status: "CREATED" | "JOINED" | "LEFT";
+  message: string;
+  activeParticipants: string[];
+}
+
+export type DocumentTopicNotification =
+  | DocumentUpdateNotification
+  | DocumentPresenceNotification
+  | {
+      type: "DOCUMENT_LOCK";
+      documentId: number;
+      mode: "REQUEST" | "OK";
+      lineNumber: number;
+      clientId: string;
+      username: string;
+      targetClientId: string | null;
+      timestamp: number;
+    };
 
 export const documentApi = {
   insert(request: TextInsertRequest) {
-    stompClient.publish("/app/document/insert", request);
+    stompClient.publish(
+      `/app/documents/${request.documentId}/lines/insert`,
+      {
+        lineNumber: request.lineNumber,
+        text: request.text,
+      },
+    );
   },
 
   update(request: TextUpdateRequest) {
-    stompClient.publish("/app/document/update", request);
+    stompClient.publish(
+      `/app/documents/${request.documentId}/lines/update`,
+      {
+        lineNumber: request.lineNumber,
+        text: request.text,
+      },
+    );
   },
 
   delete(request: TextDeleteRequest) {
-    stompClient.publish("/app/document/delete", request);
+    stompClient.publish(
+      `/app/documents/${request.documentId}/lines/delete`,
+      {
+        lineNumber: request.lineNumber,
+      },
+    );
   },
 
   subscribeDocumentUpdates(
-    handler: (message: DocumentUpdateNotification) => void,
+    documentId: number,
+    handler: (message: DocumentTopicNotification) => void,
   ) {
-    return stompClient.subscribe<DocumentUpdateNotification>(
-      "/topic/document",
+    return stompClient.subscribe<DocumentTopicNotification>(
+      `/topic/documents/${documentId}`,
       handler,
     );
   },

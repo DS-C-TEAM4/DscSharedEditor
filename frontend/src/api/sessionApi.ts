@@ -7,20 +7,51 @@ export interface CreateSessionRequest {
   initialLines: DocumentLine[];
 }
 
+export interface DocumentSummaryResponse {
+  documentId: number;
+  title: string;
+  ownerUsername: string;
+  lineCount: number;
+  memberCount: number;
+  activeParticipantCount: number;
+  topic: string;
+}
+
 export interface SessionResponse extends TextSessionItem {
   lines: DocumentLine[];
   saveStatus: SaveStatus;
   lastEditor: string;
 }
 
+export interface DocumentSnapshotResponse {
+  type: "DOCUMENT_SNAPSHOT";
+  documentId: number;
+  title: string;
+  ownerUsername: string;
+  lines: string[];
+  content: string;
+  members: string[];
+  activeParticipants: string[];
+  editLogs: Array<{
+    sequence: number;
+    timestamp: string;
+    username: string;
+    operation: string;
+    lineNumber: number;
+    beforeText: string | null;
+    afterText: string | null;
+  }>;
+  topic: string;
+}
+
 export interface JoinSessionRequest {
   username: string;
-  documentNumber: string;
+  documentId: number;
 }
 
 export interface SaveSessionRequest {
   sessionId: string;
-  documentNumber: string;
+  documentId: number;
   title: string;
   lines: DocumentLine[];
   username: string;
@@ -34,19 +65,42 @@ export interface SaveSessionResponse {
 
 export interface SavedFileInfo {
   fileName: string;
-  documentNumber: string;
+  documentId: number;
   title: string;
   updatedAt: string;
 }
 
 export const sessionApi = {
+  listDocuments(username?: string) {
+    const query = username ? `?username=${encodeURIComponent(username)}` : "";
+    return requestJson<DocumentSummaryResponse[]>(`/api/documents${query}`);
+  },
+
+  getDocument(documentId: number) {
+    return requestJson<DocumentSnapshotResponse>(`/api/documents/${documentId}`);
+  },
+
+  createDocument(request: CreateSessionRequest) {
+    return postJson<CreateSessionRequest, DocumentSnapshotResponse>(
+      "/api/documents",
+      request,
+    );
+  },
+
+  joinDocument(documentId: number, request: { username: string }) {
+    return postJson<{ username: string }, DocumentSnapshotResponse>(
+      `/api/documents/${documentId}/join`,
+      request,
+    );
+  },
+
   getActiveSessions() {
     // TODO(server): 여러 텍스트 세션 목록 조회 API 필요
     return requestJson<TextSessionItem[]>("/api/sessions/active");
   },
 
   createSession(request: CreateSessionRequest) {
-    // TODO(server): documentNumber 생성과 초기 줄 상태 생성 담당
+    // TODO(server): documentId 생성과 초기 줄 상태 생성 담당
     return postJson<CreateSessionRequest, SessionResponse>(
       "/api/sessions/create",
       request,

@@ -2,14 +2,14 @@
 
 interface TextSessionListProps {
   sessions: TextSessionItem[];
-  currentDocumentNumber: string;
+  currentDocumentId: number;
   onNewSession: () => void;
-  onSessionSelect: (documentNumber: string) => void;
+  onSessionSelect: (documentId: number) => void;
 }
 
 export function TextSessionList({
   sessions,
-  currentDocumentNumber,
+  currentDocumentId,
   onNewSession,
   onSessionSelect,
 }: TextSessionListProps) {
@@ -23,14 +23,14 @@ export function TextSessionList({
       </div>
       <div className="session-list">
         {sessions.map((session) => {
-          const active = session.documentNumber === currentDocumentNumber;
+          const active = session.documentId === currentDocumentId;
           return (
             <button
               className={active ? "session-item active" : "session-item"}
               key={session.sessionId}
-              onClick={() => onSessionSelect(session.documentNumber)}
+              onClick={() => onSessionSelect(session.documentId)}
             >
-              <span className="doc-number">#{session.documentNumber}</span>
+              <span className="doc-number">#{session.documentId}</span>
               <strong>{session.title}</strong>
               <span className="muted">참여자 {session.participantCount}명</span>
             </button>

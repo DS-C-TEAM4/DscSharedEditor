@@ -2,7 +2,7 @@
 import { SaveStatus } from "../../types";
 
 interface AppHeaderProps {
-  documentNumber: string;
+  documentId: number;
   documentTitle: string;
   saveStatus: SaveStatus;
   lastEditor: string;
@@ -13,7 +13,7 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({
-  documentNumber,
+  documentId,
   documentTitle,
   saveStatus,
   lastEditor,
@@ -29,7 +29,7 @@ export function AppHeader({
           <Home size={18} />
         </button>
         <div>
-          <p className="eyebrow">문서 번호 {documentNumber}</p>
+          <p className="eyebrow">문서 ID {documentId}</p>
           <h1>{documentTitle}</h1>
         </div>
       </div>

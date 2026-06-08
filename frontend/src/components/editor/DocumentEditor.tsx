@@ -2,10 +2,11 @@
 
 interface DocumentEditorProps {
   title: string;
-  documentNumber: string;
+  documentId: number;
   currentUser: string;
   lines: DocumentLine[];
   selectedLineId: string | null;
+  editableLineId: string | null;
   onLineSelect: (lineId: string) => void;
   onLineTextChange: (lineId: string, nextText: string) => void;
   onAddLineBelow: () => void;
@@ -15,10 +16,11 @@ interface DocumentEditorProps {
 
 export function DocumentEditor({
   title,
-  documentNumber,
+  documentId,
   currentUser,
   lines,
   selectedLineId,
+  editableLineId,
   onLineSelect,
   onLineTextChange,
   onAddLineBelow,
@@ -30,7 +32,7 @@ export function DocumentEditor({
       <section className="document-card">
         <div className="document-header">
           <div>
-            <p className="eyebrow">문서 번호 {documentNumber}</p>
+            <p className="eyebrow">문서 ID {documentId}</p>
             <h2>{title}</h2>
           </div>
           <div className="document-actions">
@@ -53,26 +55,20 @@ export function DocumentEditor({
 
         <div className="line-list">
           {lines.map((line) => {
-            const lockedByOther = line.editor && line.editor !== currentUser;
-            const editingByMe = line.editor === currentUser;
+            const editingByMe = editableLineId === line.lineId;
             const selected = selectedLineId === line.lineId;
-            const className = selected
-              ? "line-row selected"
-              : lockedByOther
-                ? "line-row locked"
-                : "line-row";
+            const waitingForLock = selected && !editingByMe;
+            const className = selected ? "line-row selected" : "line-row";
 
             return (
               <div
                 className={className}
                 key={line.lineId}
-                onClick={() => {
-                  if (!lockedByOther) onLineSelect(line.lineId);
-                }}
+                onClick={() => onLineSelect(line.lineId)}
               >
                 <span className="line-number">{line.lineNumber}</span>
                 <textarea
-                  readOnly={!!lockedByOther || !selected}
+                  readOnly={editableLineId !== line.lineId}
                   value={line.text}
                   aria-label={`line ${line.lineNumber}`}
                   placeholder="내용을 입력하세요."
@@ -83,7 +79,10 @@ export function DocumentEditor({
                 {editingByMe && (
                   <span className="badge mine">내가 편집 중</span>
                 )}
-                {lockedByOther && (
+                {waitingForLock && (
+                  <span className="badge locked">잠금 대기</span>
+                )}
+                {line.editor && line.editor !== currentUser && !waitingForLock && (
                   <span className="badge locked">{line.editor} 편집 중</span>
                 )}
               </div>

@@ -4,7 +4,7 @@ export type EventLogType = "info" | "success" | "warning";
 
 export interface TextSessionItem {
   sessionId: string;
-  documentNumber: string;
+  documentId: number;
   title: string;
   participantCount: number;
   status: SessionStatus;

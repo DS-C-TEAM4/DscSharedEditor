@@ -4,6 +4,7 @@ interface DocumentEditorProps {
   title: string;
   documentId: number;
   currentUser: string;
+  lockNotice: string;
   lines: DocumentLine[];
   selectedLineId: string | null;
   editableLineId: string | null;
@@ -18,6 +19,7 @@ export function DocumentEditor({
   title,
   documentId,
   currentUser,
+  lockNotice,
   lines,
   selectedLineId,
   editableLineId,
@@ -34,6 +36,7 @@ export function DocumentEditor({
           <div>
             <p className="eyebrow">문서 ID {documentId}</p>
             <h2>{title}</h2>
+            <p className="muted">{lockNotice}</p>
           </div>
           <div className="document-actions">
             <button

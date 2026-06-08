@@ -124,7 +124,6 @@ export const sessionApi = {
   },
 
   getSavedFiles() {
-    // TODO(server): 서버 저장 JSON 파일 목록 조회 API 필요
     return requestJson<SavedFileInfo[]>("/api/sessions/saved");
   },
 };

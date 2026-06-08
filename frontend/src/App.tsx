@@ -15,6 +15,7 @@ import type {
 import type {
   DocumentSnapshotResponse,
   DocumentSummaryResponse,
+  SavedFileInfo,
 } from "./api/sessionApi";
 import {
   mockEventLogs,
@@ -34,9 +35,13 @@ interface LocalLineLockState {
   status: "requesting" | "locked";
   timestamp: number;
   lineId: string | null;
+  peerCount: number;
   pendingAcks: Set<string>;
   deferredRequests: DocumentLockNotification[];
+  timeoutId: number | null;
 }
+
+const LOCK_TIMEOUT_MS = 10000;
 
 function renumberLines(lines: DocumentLine[]) {
   return lines.map((line, index) => ({
@@ -245,6 +250,8 @@ export default function App() {
   const [currentDocumentId, setCurrentDocumentId] = useState(38172946);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [editableLineId, setEditableLineId] = useState<string | null>(null);
+  const [lockNotice, setLockNotice] = useState<string>("편집할 줄을 선택하세요.");
+  const [savedFiles, setSavedFiles] = useState<SavedFileInfo[]>([]);
   const [socketReady, setSocketReady] = useState(false);
   const clientIdRef = useRef(createClientId());
   const lamportClockRef = useRef(0);
@@ -311,21 +318,35 @@ export default function App() {
         status: "requesting",
         timestamp: 0,
         lineId: null,
+        peerCount: 0,
         pendingAcks: new Set(),
         deferredRequests: [],
+        timeoutId: null,
       };
       lineLocksRef.current.set(lineNumber, state);
     }
     return state;
   };
 
+  const clearLockTimeout = (state: LocalLineLockState) => {
+    if (state.timeoutId != null) {
+      window.clearTimeout(state.timeoutId);
+      state.timeoutId = null;
+    }
+  };
+
   const releaseAllLineLocks = () => {
     const lineNumbers = Array.from(lineLocksRef.current.keys());
     lineNumbers.forEach((lineNumber) => {
+      const state = lineLocksRef.current.get(lineNumber);
+      if (!state) return;
+      clearLockTimeout(state);
       sendDeferredReplies(lineNumber);
     });
     lineLocksRef.current.clear();
+    setSelectedLineId(null);
     setEditableLineId(null);
+    setLockNotice("편집할 줄을 선택하세요.");
   };
 
   const comparePriority = (
@@ -381,6 +402,7 @@ export default function App() {
       return;
     }
 
+    clearLockTimeout(state);
     sendDeferredReplies(lineNumber);
     lineLocksRef.current.delete(lineNumber);
 
@@ -404,20 +426,38 @@ export default function App() {
     const state = getLineLockState(lineNumber);
     const timestamp = nextLamportTimestamp();
 
+    clearLockTimeout(state);
     state.status = peers.length === 0 ? "locked" : "requesting";
     state.timestamp = timestamp;
     state.lineId = lineId;
+    state.peerCount = peers.length;
     state.pendingAcks = new Set(peers);
     state.deferredRequests = [];
 
     if (peers.length === 0) {
       setEditableLineId(lineId);
+      setLockNotice(`${lineNumber + 1}행 잠금을 즉시 획득했습니다.`);
       pushEventLog(`${lineNumber + 1}행 잠금을 즉시 획득했습니다.`, "success");
       return;
     }
 
     setEditableLineId(null);
+    setLockNotice(`${lineNumber + 1}행 잠금 요청 중 0/${peers.length} 승인`);
     pushEventLog(`${lineNumber + 1}행 잠금을 요청했습니다.`, "info");
+
+    state.timeoutId = window.setTimeout(() => {
+      const currentState = lineLocksRef.current.get(lineNumber);
+      if (!currentState || currentState.timestamp !== timestamp || currentState.status !== "requesting") {
+        return;
+      }
+
+      clearLockTimeout(currentState);
+      lineLocksRef.current.delete(lineNumber);
+      setSelectedLineId(null);
+      setEditableLineId(null);
+      setLockNotice(`${lineNumber + 1}행 잠금 요청이 시간 초과되었습니다.`);
+      pushEventLog(`${lineNumber + 1}행 잠금 요청이 시간 초과되었습니다.`, "warning");
+    }, LOCK_TIMEOUT_MS);
 
     lockApi.requestLock(currentSession.documentId, {
       lineNumber,
@@ -482,9 +522,12 @@ export default function App() {
     state.pendingAcks.delete(notification.username);
 
     if (state.pendingAcks.size > 0) {
+      const approved = state.peerCount - state.pendingAcks.size;
+      setLockNotice(`${notification.lineNumber + 1}행 잠금 요청 중 ${approved}/${state.peerCount} 승인`);
       return;
     }
 
+    clearLockTimeout(state);
     state.status = "locked";
     const lineId = state.lineId ?? getLineIdByIndex(notification.lineNumber);
     if (!lineId) {
@@ -492,7 +535,46 @@ export default function App() {
     }
 
     setEditableLineId(lineId);
+    setLockNotice(`${notification.lineNumber + 1}행 잠금을 획득했습니다.`);
     pushEventLog(`${notification.lineNumber + 1}행 잠금을 획득했습니다.`, "success");
+  };
+
+  const syncPendingLocksWithPresence = (participants: string[]) => {
+    const activePeers = new Set(participants.filter((participant) => participant !== username));
+
+    lineLocksRef.current.forEach((state, lineNumber) => {
+      if (state.status !== "requesting") {
+        return;
+      }
+
+      let changed = false;
+      Array.from(state.pendingAcks).forEach((peer) => {
+        if (!activePeers.has(peer)) {
+          state.pendingAcks.delete(peer);
+          changed = true;
+        }
+      });
+
+      if (!changed) {
+        return;
+      }
+
+      state.peerCount = activePeers.size;
+      if (state.pendingAcks.size === 0) {
+        clearLockTimeout(state);
+        state.status = "locked";
+        const lineId = state.lineId ?? getLineIdByIndex(lineNumber);
+        if (lineId && selectedLineId === lineId) {
+          setEditableLineId(lineId);
+        }
+        setLockNotice(`${lineNumber + 1}행 잠금을 획득했습니다.`);
+        pushEventLog(`${lineNumber + 1}행 잠금을 획득했습니다.`, "success");
+        return;
+      }
+
+      const approved = state.peerCount - state.pendingAcks.size;
+      setLockNotice(`${lineNumber + 1}행 잠금 요청 중 ${approved}/${state.peerCount} 승인`);
+    });
   };
 
   const mergeSession = (nextSession: TextSessionState) => {
@@ -555,6 +637,7 @@ export default function App() {
 
         if (notification.type === "DOCUMENT_PRESENCE") {
           syncActiveParticipants(notification.activeParticipants);
+          syncPendingLocksWithPresence(notification.activeParticipants);
           setSessions((prev) =>
             prev.map((session) =>
               session.documentId === notification.documentId
@@ -563,6 +646,16 @@ export default function App() {
             ),
           );
           return;
+        }
+
+        if (
+          notification.type === "DOCUMENT_EDIT" &&
+          notification.username !== username &&
+          notification.operation !== "UPDATE"
+        ) {
+          releaseAllLineLocks();
+          setSelectedLineId(null);
+          setEditableLineId(null);
         }
 
         setSessions((prev) =>
@@ -640,6 +733,21 @@ export default function App() {
       void loadDocumentList();
     }
   }, [screen, username]);
+
+  const loadSavedFiles = async () => {
+    try {
+      const files = await sessionApi.getSavedFiles();
+      setSavedFiles(files);
+    } catch (error) {
+      console.error("저장된 파일 목록을 불러오지 못했습니다.", error);
+    }
+  };
+
+  useEffect(() => {
+    if (screen === "sessionEntry") {
+      void loadSavedFiles();
+    }
+  }, [screen]);
 
   const handleLogin = (nextUsername: string) => {
     releaseAllLineLocks();
@@ -733,10 +841,10 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
-  const handleLoadSavedSession = async () => {
+  const handleLoadSavedSession = async (documentId: number) => {
     try {
       releaseAllLineLocks();
-      await openDocument(currentDocumentId, false);
+      await openDocument(documentId, false);
     } catch (error) {
       console.error("저장된 세션을 불러오지 못했습니다.", error);
     }
@@ -940,6 +1048,7 @@ export default function App() {
       <SessionEntryPage
         username={username}
         sessions={sessions}
+        savedFiles={savedFiles}
         onCreateBlank={handleCreateBlankSession}
         onJoinSession={handleJoinSession}
         onOpenEditor={openEditor}
@@ -981,6 +1090,7 @@ export default function App() {
           title={currentSession.title}
           documentId={currentSession.documentId}
           currentUser={username}
+          lockNotice={lockNotice}
           lines={currentSession.lines}
           selectedLineId={selectedLineId}
           editableLineId={editableLineId}

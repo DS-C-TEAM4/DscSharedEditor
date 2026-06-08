@@ -1,19 +1,21 @@
 ﻿import { useRef, useState } from "react";
-import { TextSessionItem } from "../../types";
+import { SavedFileInfo, TextSessionItem } from "../../api/sessionApi";
 
 interface SessionEntryPageProps {
   username: string;
   sessions: TextSessionItem[];
+  savedFiles: SavedFileInfo[];
   onCreateBlank: () => void;
   onJoinSession: (documentId: number) => void;
   onOpenEditor: (documentId: number) => void;
-  onLoadSavedSession: () => void;
+  onLoadSavedSession: (documentId: number) => void;
   onImportJson: (file: File) => void;
 }
 
 export function SessionEntryPage({
   username,
   sessions,
+  savedFiles,
   onCreateBlank,
   onJoinSession,
   onOpenEditor,
@@ -77,9 +79,6 @@ export function SessionEntryPage({
             서버 저장 JSON 또는 로컬 JSON 파일에서 세션을 불러오는 흐름입니다.
           </p>
           <div className="entry-actions">
-            <button className="secondary-button" onClick={onLoadSavedSession}>
-              서버 저장 파일 불러오기
-            </button>
             <button
               className="secondary-button"
               onClick={() => fileInputRef.current?.click()}
@@ -94,6 +93,23 @@ export function SessionEntryPage({
             className="hidden-file-input"
             onChange={handleFileChange}
           />
+          <div className="saved-file-list">
+            {savedFiles.length === 0 ? (
+              <p className="muted">저장된 파일이 없습니다.</p>
+            ) : (
+              savedFiles.map((file) => (
+                <button
+                  className="saved-file-item"
+                  key={file.fileName}
+                  onClick={() => onLoadSavedSession(file.documentId)}
+                >
+                  <strong>{file.title}</strong>
+                  <span className="doc-number">#{file.documentId}</span>
+                  <span className="muted">{file.updatedAt}</span>
+                </button>
+              ))
+            )}
+          </div>
         </article>
       </section>
 

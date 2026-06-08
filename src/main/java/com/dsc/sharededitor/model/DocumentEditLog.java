@@ -21,8 +21,18 @@ public class DocumentEditLog {
                            int lineNumber,
                            String beforeText,
                            String afterText) {
+        this(sequence, Instant.now(), username, operation, lineNumber, beforeText, afterText);
+    }
+
+    public DocumentEditLog(long sequence,
+                           Instant timestamp,
+                           String username,
+                           String operation,
+                           int lineNumber,
+                           String beforeText,
+                           String afterText) {
         this.sequence = sequence;
-        this.timestamp = Instant.now();
+        this.timestamp = timestamp == null ? Instant.now() : timestamp;
         this.username = username;
         this.operation = operation;
         this.lineNumber = lineNumber;

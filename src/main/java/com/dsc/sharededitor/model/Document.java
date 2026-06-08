@@ -2,6 +2,7 @@ package com.dsc.sharededitor.model;
 
 import lombok.Getter;
 
+import java.util.Collection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -24,6 +25,34 @@ public class Document {
         this.title         = title;
         this.ownerUsername = ownerUsername;
         this.members.add(ownerUsername);
+    }
+
+    public Document(Long documentId,
+                    String title,
+                    String ownerUsername,
+                    Collection<String> members,
+                    Collection<String> lines,
+                    Collection<DocumentEditLog> editLogs,
+                    long nextLogSequence) {
+        this.documentId = documentId;
+        this.title = title;
+        this.ownerUsername = ownerUsername;
+
+        if (members != null && !members.isEmpty()) {
+            this.members.addAll(members);
+        }
+        if (this.members.isEmpty()) {
+            this.members.add(ownerUsername);
+        }
+
+        if (lines != null && !lines.isEmpty()) {
+            this.lines.addAll(lines);
+        }
+        if (editLogs != null && !editLogs.isEmpty()) {
+            this.editLogs.addAll(editLogs);
+        }
+
+        this.logSequence.set(Math.max(1L, nextLogSequence));
     }
 
     public void addMember(String username) {
@@ -50,6 +79,10 @@ public class Document {
         return List.copyOf(editLogs);
     }
 
+    public synchronized long getNextLogSequence() {
+        return logSequence.get();
+    }
+
     public synchronized String getContent() {
         return String.join("\n", lines);
     }
@@ -73,6 +106,14 @@ public class Document {
         int index = requireLineIndex(lineNumber);
         String before = lines.remove(index);
         addLog(username, "DELETE", index, before, null);
+    }
+
+    public synchronized void replaceLines(Collection<String> nextLines) {
+        lines.clear();
+        if (nextLines == null) {
+            return;
+        }
+        nextLines.forEach(line -> lines.add(normalize(line)));
     }
 
     private int clampInsertIndex(int lineNumber) {

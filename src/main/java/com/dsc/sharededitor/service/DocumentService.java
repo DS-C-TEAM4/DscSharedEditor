@@ -7,6 +7,7 @@ import com.dsc.sharededitor.dto.response.DocumentEditNotification;
 import com.dsc.sharededitor.dto.response.DocumentSnapshotResponse;
 import com.dsc.sharededitor.exception.DocumentEditException;
 import com.dsc.sharededitor.exception.DocumentNotFoundException;
+import com.dsc.sharededitor.dto.request.SaveSessionRequest;
 import com.dsc.sharededitor.repository.DocumentRepository;
 import org.springframework.stereotype.Service;
 
@@ -85,6 +86,19 @@ public class DocumentService {
         } catch (IllegalArgumentException ex) {
             throw new DocumentEditException(ex.getMessage());
         }
+        return toSnapshot(document);
+    }
+
+    public DocumentSnapshotResponse saveDocument(Long documentId, String username, List<SaveSessionRequest.SessionLine> lines) {
+        Document document = getRequiredDocument(documentId);
+        ensureActiveParticipant(documentId, username);
+        if (lines != null) {
+            document.replaceLines(lines.stream()
+                    .sorted(Comparator.comparingInt(SaveSessionRequest.SessionLine::getLineNumber))
+                    .map(SaveSessionRequest.SessionLine::getText)
+                    .collect(Collectors.toList()));
+        }
+        documentRepository.save(document);
         return toSnapshot(document);
     }
 

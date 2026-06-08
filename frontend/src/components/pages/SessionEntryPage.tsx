@@ -40,7 +40,7 @@ export function SessionEntryPage({
         <div>
           <p className="eyebrow">텍스트 세션 선택</p>
           <h1>참여할 문서를 선택하세요</h1>
-          <p>새 세션을 만들거나 문서 번호를 기준으로 기존 세션에 참여합니다.</p>
+          <p>새 세션을 만들거나 문서 ID를 기준으로 기존 세션에 참여합니다.</p>
         </div>
         <div className="profile-chip">{username}</div>
       </header>
@@ -55,7 +55,7 @@ export function SessionEntryPage({
         </article>
 
         <article className="entry-card">
-          <h2>문서 번호로 참여</h2>
+          <h2>문서 ID로 참여</h2>
           <p>
             Late-comer 클라이언트가 현재 문서 상태를 받는 흐름을 확인합니다.
           </p>
@@ -117,8 +117,8 @@ export function SessionEntryPage({
       <section className="active-session-section">
         <div className="panel-header horizontal">
           <div>
-            <h2>활성 텍스트 세션</h2>
-            <p>현재 목업 데이터 기준 목록입니다.</p>
+            <h2>서버 문서 목록</h2>
+            <p>서버에서 불러온 문서 목록입니다.</p>
           </div>
         </div>
 

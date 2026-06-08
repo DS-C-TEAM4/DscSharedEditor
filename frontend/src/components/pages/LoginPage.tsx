@@ -1,5 +1,10 @@
+import { useState } from "react";
+
 interface LoginPageProps {
-  onLogin: (username: string) => void;
+  socketReady: boolean;
+  pending: boolean;
+  error: string | null;
+  onLogin: (username: string, password: string) => void;
 }
 
 const testUsers = [
@@ -9,7 +14,15 @@ const testUsers = [
   { username: "user4", password: "4567" },
 ];
 
-export function LoginPage({ onLogin }: LoginPageProps) {
+export function LoginPage({
+  socketReady,
+  pending,
+  error,
+  onLogin,
+}: LoginPageProps) {
+  const [username, setUsername] = useState("user1");
+  const [password, setPassword] = useState("1234");
+
   return (
     <main className="auth-page">
       <section className="auth-card">
@@ -23,18 +36,29 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         <div className="login-form">
           <label>
             Username
-            <input placeholder="user1" />
+            <input
+              value={username}
+              placeholder="user1"
+              onChange={(event) => setUsername(event.target.value)}
+            />
           </label>
           <label>
             Password
-            <input type="password" placeholder="1234" />
+            <input
+              type="password"
+              value={password}
+              placeholder="1234"
+              onChange={(event) => setPassword(event.target.value)}
+            />
           </label>
           <button
             className="primary-button full-width"
-            onClick={() => onLogin("user1")}
+            disabled={!socketReady || pending}
+            onClick={() => onLogin(username, password)}
           >
-            로그인
+            {pending ? "로그인 중..." : socketReady ? "로그인" : "연결 대기 중"}
           </button>
+          {error && <p className="auth-error">{error}</p>}
         </div>
 
         <div className="quick-login">
@@ -44,7 +68,8 @@ export function LoginPage({ onLogin }: LoginPageProps) {
               <button
                 className="secondary-button"
                 key={user.username}
-                onClick={() => onLogin(user.username)}
+                disabled={!socketReady || pending}
+                onClick={() => onLogin(user.username, user.password)}
               >
                 {user.username} / {user.password}
               </button>

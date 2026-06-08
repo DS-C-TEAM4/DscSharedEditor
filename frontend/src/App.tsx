@@ -6,7 +6,7 @@ import { DocumentEditor } from "./components/editor/DocumentEditor";
 import { StatusPanel } from "./components/status/StatusPanel";
 import { LoginPage } from "./components/pages/LoginPage";
 import { SessionEntryPage } from "./components/pages/SessionEntryPage";
-import { documentApi, lockApi, sessionApi, stompClient } from "./api";
+import { authApi, documentApi, lockApi, sessionApi, stompClient } from "./api";
 import type {
   DocumentPresenceNotification,
   DocumentTopicNotification,
@@ -17,12 +17,6 @@ import type {
   DocumentSummaryResponse,
   SavedFileInfo,
 } from "./api/sessionApi";
-import {
-  mockEventLogs,
-  mockLines,
-  mockParticipants,
-  mockSessions,
-} from "./mockData";
 import { DocumentLine, TextSessionState } from "./types";
 import type { EventLogMessage, Participant } from "./types";
 
@@ -203,65 +197,44 @@ function mapDocumentPresenceToSession(
   };
 }
 
-function createInitialSessions(): TextSessionState[] {
-  return mockSessions.map((session, index) => ({
-    ...session,
-    lines:
-      index === 0
-        ? mockLines
-        : [
-            {
-              lineId: `${session.sessionId}-line-1`,
-              lineNumber: 1,
-              text: `${session.title} 문서의 목업 내용입니다.`,
-              editor: null,
-            },
-          ],
-    saveStatus: index === 0 ? "저장 필요" : "서버 저장됨",
-    lastEditor: "user1",
-    participants:
-      index === 0
-        ? mockParticipants
-        : [
-            {
-              username: "user1",
-              status: "online",
-              description: "접속 중",
-            },
-          ],
-    eventLogs:
-      index === 0
-        ? mockEventLogs
-        : [
-            {
-              message: `${session.title} 세션 상태를 불러왔습니다.`,
-              timestamp: "23:22",
-              type: "info",
-            },
-          ],
-  }));
+function createEmptySessionState(documentId: number): TextSessionState {
+  return {
+    sessionId: `document-${documentId}`,
+    documentId,
+    title: "문서를 선택하세요",
+    participantCount: 0,
+    status: "saved",
+    lines: [],
+    participants: [],
+    eventLogs: [],
+    saveStatus: "서버 저장됨",
+    lastEditor: "-",
+  };
 }
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("login");
   const [username, setUsername] = useState("user1");
-  const [sessions, setSessions] = useState<TextSessionState[]>(
-    createInitialSessions,
-  );
+  const [sessions, setSessions] = useState<TextSessionState[]>([]);
+  const [temporarySession, setTemporarySession] = useState<TextSessionState | null>(null);
   const [currentDocumentId, setCurrentDocumentId] = useState(38172946);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [editableLineId, setEditableLineId] = useState<string | null>(null);
   const [lockNotice, setLockNotice] = useState<string>("편집할 줄을 선택하세요.");
   const [savedFiles, setSavedFiles] = useState<SavedFileInfo[]>([]);
   const [socketReady, setSocketReady] = useState(false);
+  const [loginPending, setLoginPending] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const clientIdRef = useRef(createClientId());
   const lamportClockRef = useRef(0);
   const activeParticipantsRef = useRef<string[]>([]);
   const lineLocksRef = useRef(new Map<number, LocalLineLockState>());
+  const loginSubscriptionRef = useRef<string | null>(null);
 
   const currentSession =
     sessions.find((session) => session.documentId === currentDocumentId) ??
-    sessions[0];
+    temporarySession ??
+    createEmptySessionState(currentDocumentId);
 
   const pushEventLog = (
     message: string,
@@ -713,6 +686,7 @@ export default function App() {
 
   const openDocument = async (documentId: number, join = true) => {
     try {
+      setTemporarySession(null);
       releaseAllLineLocks();
       const snapshot = join
         ? await sessionApi.joinDocument(documentId, { username })
@@ -750,12 +724,54 @@ export default function App() {
     }
   }, [screen]);
 
-  const handleLogin = (nextUsername: string) => {
-    releaseAllLineLocks();
-    setSelectedLineId(null);
-    setEditableLineId(null);
-    setUsername(nextUsername);
-    setScreen("sessionEntry");
+  const clearLoginSubscription = () => {
+    if (loginSubscriptionRef.current) {
+      stompClient.unsubscribe(loginSubscriptionRef.current);
+      loginSubscriptionRef.current = null;
+    }
+  };
+
+  const handleLogin = (nextUsername: string, password: string) => {
+    if (!socketReady || !stompClient.isConnected()) {
+      setLoginError("서버 연결을 기다리는 중입니다.");
+      return;
+    }
+
+    setLoginPending(true);
+    setLoginError(null);
+    clearLoginSubscription();
+
+    loginSubscriptionRef.current = authApi.subscribeLoginResponse(
+      clientIdRef.current,
+      (response) => {
+        clearLoginSubscription();
+        setLoginPending(false);
+
+        if (!response.success) {
+          setLoginError(response.message);
+          return;
+        }
+
+        setTemporarySession(null);
+        releaseAllLineLocks();
+        setSelectedLineId(null);
+        setEditableLineId(null);
+        setUsername(nextUsername);
+        setScreen("sessionEntry");
+      },
+    );
+
+    try {
+      authApi.sendLogin({
+        clientId: clientIdRef.current,
+        username: nextUsername,
+        password,
+      });
+    } catch (error) {
+      clearLoginSubscription();
+      setLoginPending(false);
+      setLoginError("로그인 요청을 보낼 수 없습니다.");
+    }
   };
 
   const openEditor = (documentId = currentDocumentId) => {
@@ -764,6 +780,7 @@ export default function App() {
 
   const handleCreateBlankSession = async () => {
     try {
+      setTemporarySession(null);
       releaseAllLineLocks();
       const snapshot = await sessionApi.createDocument({
         username,
@@ -784,6 +801,7 @@ export default function App() {
 
   const handleJoinSession = async (documentId: number) => {
     try {
+      setTemporarySession(null);
       releaseAllLineLocks();
       const snapshot = await sessionApi.joinDocument(documentId, { username });
       const nextSession = mapSnapshotToSession(snapshot);
@@ -844,6 +862,7 @@ export default function App() {
 
   const handleLoadSavedSession = async (documentId: number) => {
     try {
+      setTemporarySession(null);
       releaseAllLineLocks();
       await openDocument(documentId, false);
     } catch (error) {
@@ -905,7 +924,7 @@ export default function App() {
       ],
     };
 
-    setSessions((prev) => [...prev, importedSession]);
+    setTemporarySession(importedSession);
     setCurrentDocumentId(documentId);
     setSelectedLineId(null);
     setEditableLineId(null);
@@ -1041,7 +1060,14 @@ export default function App() {
   };
 
   if (screen === "login") {
-    return <LoginPage onLogin={handleLogin} />;
+    return (
+      <LoginPage
+        socketReady={socketReady}
+        pending={loginPending}
+        error={loginError}
+        onLogin={handleLogin}
+      />
+    );
   }
 
   if (screen === "sessionEntry") {
@@ -1074,6 +1100,11 @@ export default function App() {
           setScreen("sessionEntry");
         }}
         onLogout={() => {
+          try {
+            authApi.sendLogout();
+          } catch (error) {
+            console.error("로그아웃 요청을 보내지 못했습니다.", error);
+          }
           releaseAllLineLocks();
           setSelectedLineId(null);
           setScreen("login");

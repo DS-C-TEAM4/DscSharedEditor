@@ -24,6 +24,7 @@ import {
   mockSessions,
 } from "./mockData";
 import { DocumentLine, TextSessionState } from "./types";
+import type { EventLogMessage, Participant } from "./types";
 
 type Screen = "login" | "sessionEntry" | "editor";
 type DocumentLockNotification = Extract<
@@ -134,7 +135,7 @@ function mapDocumentUpdateToSession(
   }));
 
   const logEntry = notification.logEntry;
-  const nextLog =
+  const nextLog: EventLogMessage =
     logEntry == null
       ? {
           message: `${notification.username}님이 문서를 편집했습니다.`,
@@ -172,7 +173,7 @@ function mapDocumentPresenceToSession(
     ]),
   );
 
-  const participants = knownUsers.map((username) => ({
+  const participants: Participant[] = knownUsers.map((username) => ({
     username,
     status: activeParticipantSet.has(username) ? "editing" : "online",
     description:

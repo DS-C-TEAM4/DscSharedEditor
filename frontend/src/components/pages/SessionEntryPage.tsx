@@ -1,5 +1,6 @@
 ﻿import { useRef, useState } from "react";
-import { SavedFileInfo, TextSessionItem } from "../../api/sessionApi";
+import { SavedFileInfo } from "../../api/sessionApi";
+import { TextSessionItem } from "../../types";
 
 interface SessionEntryPageProps {
   username: string;

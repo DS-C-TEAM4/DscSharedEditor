@@ -1,4 +1,5 @@
-﻿import { DocumentLine } from "../../types";
+﻿import { useRef, useState } from "react";
+import { DocumentLine } from "../../types";
 
 interface DocumentEditorProps {
   title: string;
@@ -29,6 +30,10 @@ export function DocumentEditor({
   onAddLineAtEnd,
   onDeleteSelectedLine,
 }: DocumentEditorProps) {
+  const composingRef = useRef(false);
+  const [draftLineId, setDraftLineId] = useState<string | null>(null);
+  const [draftText, setDraftText] = useState<string>("");
+
   return (
     <main className="editor-shell">
       <section className="document-card">
@@ -72,12 +77,27 @@ export function DocumentEditor({
                 <span className="line-number">{line.lineNumber}</span>
                 <textarea
                   readOnly={editableLineId !== line.lineId}
-                  value={line.text}
+                  value={draftLineId === line.lineId ? draftText : line.text}
                   aria-label={`line ${line.lineNumber}`}
                   placeholder="내용을 입력하세요."
-                  onChange={(event) =>
-                    onLineTextChange(line.lineId, event.target.value)
-                  }
+                  onCompositionStart={(event) => {
+                    composingRef.current = true;
+                    setDraftLineId(line.lineId);
+                    setDraftText((event.target as HTMLTextAreaElement).value);
+                  }}
+                  onCompositionEnd={(event) => {
+                    composingRef.current = false;
+                    const value = (event.target as HTMLTextAreaElement).value;
+                    setDraftLineId(null);
+                    onLineTextChange(line.lineId, value);
+                  }}
+                  onChange={(event) => {
+                    if (composingRef.current) {
+                      setDraftText(event.target.value);
+                    } else {
+                      onLineTextChange(line.lineId, event.target.value);
+                    }
+                  }}
                 />
                 {editingByMe && (
                   <span className="badge mine">내가 편집 중</span>

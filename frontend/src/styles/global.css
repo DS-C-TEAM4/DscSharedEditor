@@ -273,16 +273,6 @@ textarea::placeholder {
   background: #22c55e;
 }
 
-.entry-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.hidden-file-input {
-  display: none;
-}
-
 .header-right {
   flex-wrap: wrap;
 }

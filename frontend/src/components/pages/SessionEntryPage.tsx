@@ -1,4 +1,4 @@
-﻿import { useRef, useState } from "react";
+import { useState } from "react";
 import { SavedFileInfo } from "../../api/sessionApi";
 import { TextSessionItem } from "../../types";
 
@@ -10,7 +10,6 @@ interface SessionEntryPageProps {
   onJoinSession: (documentId: number) => void;
   onOpenEditor: (documentId: number) => void;
   onLoadSavedSession: (documentId: number) => void;
-  onImportJson: (file: File) => void;
 }
 
 export function SessionEntryPage({
@@ -21,18 +20,8 @@ export function SessionEntryPage({
   onJoinSession,
   onOpenEditor,
   onLoadSavedSession,
-  onImportJson,
 }: SessionEntryPageProps) {
   const [documentIdInput, setDocumentIdInput] = useState("38172946");
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    onImportJson(file);
-    event.target.value = "";
-  };
 
   return (
     <main className="session-page">
@@ -76,24 +65,7 @@ export function SessionEntryPage({
 
         <article className="entry-card">
           <h2>세션 저장 파일</h2>
-          <p>
-            서버 저장 JSON 또는 로컬 JSON 파일에서 세션을 불러오는 흐름입니다.
-          </p>
-          <div className="entry-actions">
-            <button
-              className="secondary-button"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              JSON 불러오기
-            </button>
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".json,application/json"
-            className="hidden-file-input"
-            onChange={handleFileChange}
-          />
+          <p>서버에 저장된 JSON 파일에서 세션을 불러오는 흐름입니다.</p>
           <div className="saved-file-list">
             {savedFiles.length === 0 ? (
               <p className="muted">저장된 파일이 없습니다.</p>

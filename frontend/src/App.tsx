@@ -53,10 +53,6 @@ function createClientId() {
   return `client-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-function createSessionNumber() {
-  return Math.floor(10000000 + Math.random() * 90000000);
-}
-
 function formatTimestamp(value: string) {
   return new Date(value).toLocaleTimeString("ko-KR", {
     hour: "2-digit",
@@ -216,7 +212,6 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>("login");
   const [username, setUsername] = useState("user1");
   const [sessions, setSessions] = useState<TextSessionState[]>([]);
-  const [temporarySession, setTemporarySession] = useState<TextSessionState | null>(null);
   const [currentDocumentId, setCurrentDocumentId] = useState(38172946);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [editableLineId, setEditableLineId] = useState<string | null>(null);
@@ -233,7 +228,6 @@ export default function App() {
 
   const currentSession =
     sessions.find((session) => session.documentId === currentDocumentId) ??
-    temporarySession ??
     createEmptySessionState(currentDocumentId);
 
   const pushEventLog = (
@@ -686,7 +680,6 @@ export default function App() {
 
   const openDocument = async (documentId: number, join = true) => {
     try {
-      setTemporarySession(null);
       releaseAllLineLocks();
       const snapshot = join
         ? await sessionApi.joinDocument(documentId, { username })
@@ -752,7 +745,6 @@ export default function App() {
           return;
         }
 
-        setTemporarySession(null);
         releaseAllLineLocks();
         setSelectedLineId(null);
         setEditableLineId(null);
@@ -780,7 +772,6 @@ export default function App() {
 
   const handleCreateBlankSession = async () => {
     try {
-      setTemporarySession(null);
       releaseAllLineLocks();
       const snapshot = await sessionApi.createDocument({
         username,
@@ -801,7 +792,6 @@ export default function App() {
 
   const handleJoinSession = async (documentId: number) => {
     try {
-      setTemporarySession(null);
       releaseAllLineLocks();
       const snapshot = await sessionApi.joinDocument(documentId, { username });
       const nextSession = mapSnapshotToSession(snapshot);
@@ -825,20 +815,22 @@ export default function App() {
         lines: currentSession.lines,
         username,
       });
-    } catch (error) {
-      console.error("세션 저장 요청에 실패했습니다.", error);
-    } finally {
       updateCurrentSession((session) => ({
         ...session,
         saveStatus: "서버 저장됨",
         lastEditor: username,
         status: "saved",
       }));
+    } catch (error) {
+      console.error("세션 저장 요청에 실패했습니다.", error);
+      updateCurrentSession((session) => ({
+        ...session,
+        saveStatus: "저장 필요",
+      }));
     }
   };
 
   const handleDownloadJson = () => {
-    // TODO(server): 서버 JSON export API 응답으로 다운로드를 처리한다.
     const payload = {
       documentId: currentSession.documentId,
       title: currentSession.title,
@@ -862,73 +854,11 @@ export default function App() {
 
   const handleLoadSavedSession = async (documentId: number) => {
     try {
-      setTemporarySession(null);
       releaseAllLineLocks();
       await openDocument(documentId, false);
     } catch (error) {
       console.error("저장된 세션을 불러오지 못했습니다.", error);
     }
-  };
-
-  const handleImportJson = async (file: File) => {
-    // TODO(server): 로컬 JSON을 서버 import API에 전달한 뒤 생성된 세션으로 진입한다.
-    const text = await file.text();
-    const parsed = JSON.parse(text) as {
-      title?: string;
-      lines?: Array<{ text: string }>;
-    };
-
-    const documentId = createSessionNumber();
-    const importedLines =
-      parsed.lines && parsed.lines.length > 0
-        ? parsed.lines.map((line, index) => ({
-            lineId: `line-${Date.now()}-${index}`,
-            lineNumber: index + 1,
-            text: line.text,
-            editor: null,
-          }))
-        : [
-            {
-              lineId: `line-${Date.now()}`,
-              lineNumber: 1,
-              text: text,
-              editor: null,
-            },
-          ];
-
-    const importedSession: TextSessionState = {
-      sessionId: `session-${Date.now()}`,
-      documentId,
-      title: parsed.title ?? file.name.replace(/\.json$/i, ""),
-      participantCount: 1,
-      status: "active",
-      lines: importedLines,
-      saveStatus: "저장 필요",
-      lastEditor: username,
-      participants: [
-        {
-          username,
-          status: "online",
-          description: "로컬 JSON 불러오기",
-        },
-      ],
-      eventLogs: [
-        {
-          message: `${file.name} 파일을 가져와 새 세션을 만들었습니다.`,
-          timestamp: new Date().toLocaleTimeString("ko-KR", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          type: "success",
-        },
-      ],
-    };
-
-    setTemporarySession(importedSession);
-    setCurrentDocumentId(documentId);
-    setSelectedLineId(null);
-    setEditableLineId(null);
-    setScreen("editor");
   };
 
   const handleLineSelect = (lineId: string) => {
@@ -1080,7 +1010,6 @@ export default function App() {
         onJoinSession={handleJoinSession}
         onOpenEditor={openEditor}
         onLoadSavedSession={handleLoadSavedSession}
-        onImportJson={handleImportJson}
       />
     );
   }

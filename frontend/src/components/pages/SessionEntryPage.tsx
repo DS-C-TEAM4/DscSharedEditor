@@ -1,9 +1,16 @@
 import { useState } from "react";
 import { TextSessionItem } from "../../types";
 
+interface Toast {
+  id: number;
+  message: string;
+  type: "success" | "warning";
+}
+
 interface SessionEntryPageProps {
   username: string;
   sessions: TextSessionItem[];
+  toasts: Toast[];
   onCreateBlank: () => void;
   onJoinSession: (documentId: number) => void;
   onOpenEditor: (documentId: number) => void;
@@ -12,6 +19,7 @@ interface SessionEntryPageProps {
 export function SessionEntryPage({
   username,
   sessions,
+  toasts,
   onCreateBlank,
   onJoinSession,
   onOpenEditor,
@@ -20,6 +28,13 @@ export function SessionEntryPage({
 
   return (
     <main className="session-page">
+      <div className="toast-container">
+        {toasts.map((toast) => (
+          <div key={toast.id} className={`toast toast-${toast.type}`}>
+            {toast.message}
+          </div>
+        ))}
+      </div>
       <header className="session-page-header">
         <div>
           <p className="eyebrow">텍스트 세션 선택</p>

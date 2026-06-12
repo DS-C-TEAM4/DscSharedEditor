@@ -11,6 +11,7 @@ import type {
   DocumentPresenceNotification,
   DocumentTopicNotification,
   DocumentUpdateNotification,
+  DocumentSaveNotification,
 } from "./api/documentApi";
 import type {
   DocumentSnapshotResponse,
@@ -194,6 +195,25 @@ function mapDocumentPresenceToSession(
           minute: "2-digit",
         }),
         type: notification.status === "LEFT" ? "warning" : "success",
+      },
+    ],
+  };
+}
+
+function mapDocumentSaveToSession(
+  session: TextSessionState,
+  notification: DocumentSaveNotification,
+): TextSessionState {
+  return {
+    ...session,
+    saveStatus: "서버 저장됨",
+    lastEditor: notification.username,
+    eventLogs: [
+      ...session.eventLogs,
+      {
+        message: notification.message,
+        timestamp: formatTimestamp(notification.timestamp),
+        type: "success",
       },
     ],
   };
@@ -626,6 +646,17 @@ export default function App() {
           return;
         }
 
+        if (notification.type === "DOCUMENT_SAVE") {
+          setSessions((prev) =>
+            prev.map((session) =>
+              session.documentId === notification.documentId
+                ? mapDocumentSaveToSession(session, notification)
+                : session,
+            ),
+          );
+          return;
+        }
+
         if (
           notification.type === "DOCUMENT_EDIT" &&
           notification.username !== username &&
@@ -829,15 +860,14 @@ export default function App() {
         lines: currentSession.lines,
         username,
       });
-    } catch (error) {
-      console.error("세션 저장 요청에 실패했습니다.", error);
-    } finally {
       updateCurrentSession((session) => ({
         ...session,
         saveStatus: "서버 저장됨",
         lastEditor: username,
         status: "saved",
       }));
+    } catch (error) {
+      console.error("세션 저장 요청에 실패했습니다.", error);
     }
   };
 

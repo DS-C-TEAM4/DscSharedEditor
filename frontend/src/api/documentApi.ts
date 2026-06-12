@@ -46,9 +46,18 @@ export interface DocumentPresenceNotification {
   activeParticipants: string[];
 }
 
+export interface DocumentSaveNotification {
+  type: "DOCUMENT_SAVE";
+  documentId: number;
+  username: string;
+  message: string;
+  timestamp: string;
+}
+
 export type DocumentTopicNotification =
   | DocumentUpdateNotification
   | DocumentPresenceNotification
+  | DocumentSaveNotification
   | {
       type: "DOCUMENT_LOCK";
       documentId: number;

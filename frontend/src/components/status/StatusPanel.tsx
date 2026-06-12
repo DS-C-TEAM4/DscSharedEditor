@@ -6,6 +6,8 @@ interface StatusPanelProps {
 }
 
 export function StatusPanel({ participants, events }: StatusPanelProps) {
+  const latestEvents = [...events].reverse();
+
   return (
     <aside className="right-panel">
       <section className="status-section">
@@ -33,7 +35,7 @@ export function StatusPanel({ participants, events }: StatusPanelProps) {
           <p>편집 과정 공유</p>
         </div>
         <div className="event-list">
-          {events.map((event, index) => (
+          {latestEvents.map((event, index) => (
             <div className={`event-item ${event.type}`} key={`${event.timestamp}-${index}`}>
               <span>{event.timestamp}</span>
               <p>{event.message}</p>

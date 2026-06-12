@@ -607,6 +607,38 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!socketReady) {
+      return;
+    }
+
+    const subscriptionId = authApi.subscribeUserStatus((notification) => {
+      if (notification.username === username) {
+        return;
+      }
+
+      const nextEvent: EventLogMessage = {
+        message: notification.message,
+        timestamp: new Date().toLocaleTimeString("ko-KR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        type: notification.status === "LEFT" ? "warning" : "success",
+      };
+
+      setSessions((prev) =>
+        prev.map((session) => ({
+          ...session,
+          eventLogs: [...session.eventLogs, nextEvent],
+        })),
+      );
+    });
+
+    return () => {
+      stompClient.unsubscribe(subscriptionId);
+    };
+  }, [socketReady, username]);
+
+  useEffect(() => {
     if (!socketReady || screen !== "editor") {
       return;
     }

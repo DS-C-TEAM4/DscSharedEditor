@@ -1,9 +1,9 @@
 ﻿* { box-sizing: border-box; }
-html, body, #root { width: 100%; min-height: 100%; margin: 0; }
+html, body, #root { width: 100%; height: 100%; margin: 0; }
 body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #1c1917; background: #f5f5f4; }
 button, textarea { font: inherit; }
 button { cursor: pointer; }
-.app-root { min-height: 100vh; display: flex; flex-direction: column; background: #f5f5f4; }
+.app-root { height: 100vh; overflow: hidden; display: flex; flex-direction: column; background: #f5f5f4; }
 .app-header { height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 24px; background: #fff; border-bottom: 1px solid #e7e5e4; }
 .header-left, .header-right, .horizontal, .document-actions, .info-bar { display: flex; align-items: center; gap: 12px; }
 .header-left h1, .document-header h2, .panel-header h2 { margin: 0; font-size: 18px; font-weight: 650; }
@@ -17,8 +17,8 @@ button { cursor: pointer; }
 .status-pill.unsaved { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
 .info-bar { height: 36px; padding: 0 24px; border-bottom: 1px solid #e7e5e4; background: #fafaf9; font-size: 13px; }
 .connection-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
-.workspace { flex: 1; min-height: 0; display: grid; grid-template-columns: 288px minmax(520px, 1fr) 320px; }
-.left-sidebar, .right-panel { background: #fff; border-color: #e7e5e4; display: flex; flex-direction: column; min-height: 0; }
+.workspace { flex: 1; min-height: 0; overflow: hidden; display: grid; grid-template-columns: 288px minmax(520px, 1fr) 320px; }
+.left-sidebar, .right-panel { background: #fff; border-color: #e7e5e4; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 .left-sidebar { border-right: 1px solid #e7e5e4; }
 .right-panel { border-left: 1px solid #e7e5e4; }
 .panel-header { padding: 16px; border-bottom: 1px solid #e7e5e4; }
@@ -42,9 +42,10 @@ textarea[readonly] { color: #57534e; cursor: not-allowed; }
 .badge.mine { background: #e0e7ff; border-color: #a5b4fc; color: #4338ca; }
 .badge.locked { background: #fef3c7; border-color: #fcd34d; color: #92400e; }
 .add-line-button { width: calc(100% - 36px); margin: 0 18px 18px; height: 44px; border: 1px dashed #d6d3d1; border-radius: 8px; background: #fafaf9; color: #57534e; }
-.status-section { border-bottom: 1px solid #e7e5e4; }
-.status-section.grow { flex: 1; min-height: 0; display: flex; flex-direction: column; border-bottom: 0; }
+.status-section { min-height: 0; border-bottom: 1px solid #e7e5e4; }
+.status-section.grow { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; border-bottom: 0; }
 .user-list, .event-list { padding: 12px; display: grid; gap: 10px; overflow: auto; }
+.event-list { flex: 1; min-height: 0; align-content: start; overflow-y: auto; }
 .user-item { display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; }
 .user-item p { margin: 3px 0 0; color: #78716c; font-size: 12px; }
 .avatar { width: 36px; height: 36px; border-radius: 50%; background: #eef2ff; color: #4338ca; display: grid; place-items: center; font-weight: 700; }

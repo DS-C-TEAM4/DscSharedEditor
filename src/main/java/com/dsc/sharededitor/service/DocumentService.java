@@ -68,11 +68,11 @@ public class DocumentService {
         return toSnapshot(document);
     }
 
-    public DocumentSnapshotResponse updateLine(Long documentId, String username, int lineNumber, String text) {
+    public DocumentSnapshotResponse updateLine(Long documentId, String username, int lineNumber, String text, boolean logEdit) {
         Document document = getRequiredDocument(documentId);
         ensureActiveParticipant(documentId, username);
         try {
-            document.updateLine(lineNumber, text, username);
+            document.updateLine(lineNumber, text, username, logEdit);
         } catch (IllegalArgumentException ex) {
             throw new DocumentEditException(ex.getMessage());
         }
@@ -103,10 +103,15 @@ public class DocumentService {
         return toSnapshot(document);
     }
 
-    public DocumentEditNotification toEditNotification(Long documentId, DocumentSnapshotResponse snapshot, String username, String operation, int lineNumber) {
-        DocumentEditLogResponse logEntry = snapshot.getEditLogs().isEmpty()
-                ? null
-                : snapshot.getEditLogs().get(snapshot.getEditLogs().size() - 1);
+    public DocumentEditNotification toEditNotification(Long documentId,
+                                                       DocumentSnapshotResponse snapshot,
+                                                       String username,
+                                                       String operation,
+                                                       int lineNumber,
+                                                       boolean includeLogEntry) {
+        DocumentEditLogResponse logEntry = includeLogEntry && !snapshot.getEditLogs().isEmpty()
+                ? snapshot.getEditLogs().get(snapshot.getEditLogs().size() - 1)
+                : null;
         return new DocumentEditNotification(
                 documentId,
                 operation,

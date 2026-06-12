@@ -88,6 +88,7 @@ public class DocumentController {
         }
 
         handleEdit(documentId, request.getLineNumber(), "INSERT", username,
+                true,
                 () -> documentService.insertLine(documentId, username, request.getLineNumber(), request.getText()));
     }
 
@@ -100,8 +101,10 @@ public class DocumentController {
             return;
         }
 
+        boolean logEdit = request.getLogEdit() == null || request.getLogEdit();
         handleEdit(documentId, request.getLineNumber(), "UPDATE", username,
-                () -> documentService.updateLine(documentId, username, request.getLineNumber(), request.getText()));
+                logEdit,
+                () -> documentService.updateLine(documentId, username, request.getLineNumber(), request.getText(), logEdit));
     }
 
     @MessageMapping("/documents/{documentId}/lines/delete")
@@ -114,6 +117,7 @@ public class DocumentController {
         }
 
         handleEdit(documentId, request.getLineNumber(), "DELETE", username,
+                true,
                 () -> documentService.deleteLine(documentId, username, request.getLineNumber()));
     }
 
@@ -121,6 +125,7 @@ public class DocumentController {
                             int lineNumber,
                             String operation,
                             String username,
+                            boolean includeLogEntry,
                             SnapshotSupplier snapshotSupplier) {
         DocumentSnapshotResponse snapshot = snapshotSupplier.get();
         DocumentEditNotification notification = documentService.toEditNotification(
@@ -128,7 +133,8 @@ public class DocumentController {
                 snapshot,
                 username,
                 operation,
-                lineNumber
+                lineNumber,
+                includeLogEntry
         );
 
         messagingTemplate.convertAndSend(topic(documentId), notification);

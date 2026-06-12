@@ -94,12 +94,14 @@ public class Document {
         addLog(username, "INSERT", index, null, newText);
     }
 
-    public synchronized void updateLine(int lineNumber, String text, String username) {
+    public synchronized void updateLine(int lineNumber, String text, String username, boolean logEdit) {
         int index = requireLineIndex(lineNumber);
         String before = lines.get(index);
         String after = normalize(text);
         lines.set(index, after);
-        addLog(username, "UPDATE", index, before, after);
+        if (logEdit) {
+            addLog(username, "UPDATE", index, before, after);
+        }
     }
 
     public synchronized void deleteLine(int lineNumber, String username) {

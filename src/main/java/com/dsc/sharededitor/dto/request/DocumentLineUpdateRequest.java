@@ -6,8 +6,18 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor
 public class DocumentLineUpdateRequest {
     private int lineNumber;
     private String text;
+    private Boolean logEdit;
+
+    public DocumentLineUpdateRequest(int lineNumber, String text) {
+        this(lineNumber, text, null);
+    }
+
+    public DocumentLineUpdateRequest(int lineNumber, String text, Boolean logEdit) {
+        this.lineNumber = lineNumber;
+        this.text = text;
+        this.logEdit = logEdit;
+    }
 }

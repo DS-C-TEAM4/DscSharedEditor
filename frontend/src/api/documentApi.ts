@@ -10,6 +10,7 @@ export interface TextUpdateRequest {
   documentId: number;
   lineNumber: number;
   text: string;
+  logEdit?: boolean;
 }
 
 export interface TextDeleteRequest {
@@ -76,6 +77,7 @@ export const documentApi = {
       {
         lineNumber: request.lineNumber,
         text: request.text,
+        logEdit: request.logEdit,
       },
     );
   },

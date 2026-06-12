@@ -34,6 +34,7 @@ interface LocalLineLockState {
   pendingAcks: Set<string>;
   deferredRequests: DocumentLockNotification[];
   timeoutId: number | null;
+  hasLoggedEdit: boolean;
 }
 
 const LOCK_TIMEOUT_MS = 10000;
@@ -145,14 +146,15 @@ function mapDocumentUpdateToSession(
           type: logEntry.operation === "DELETE" ? "warning" : "info",
         };
 
-  return {
-    ...session,
-    lines: nextLines,
-    eventLogs: [...session.eventLogs, nextLog],
-    lastEditor: notification.username,
-    saveStatus: "저장 필요",
-  };
-}
+    return {
+      ...session,
+      lines: nextLines,
+      eventLogs:
+        logEntry == null ? session.eventLogs : [...session.eventLogs, nextLog],
+      lastEditor: notification.username,
+      saveStatus: "저장 필요",
+    };
+  }
 
 function mapDocumentPresenceToSession(
   session: TextSessionState,
@@ -296,6 +298,7 @@ export default function App() {
         pendingAcks: new Set(),
         deferredRequests: [],
         timeoutId: null,
+        hasLoggedEdit: false,
       };
       lineLocksRef.current.set(lineNumber, state);
     }
@@ -407,6 +410,7 @@ export default function App() {
     state.peerCount = peers.length;
     state.pendingAcks = new Set(peers);
     state.deferredRequests = [];
+    state.hasLoggedEdit = false;
 
     if (peers.length === 0) {
       setEditableLineId(lineId);
@@ -953,10 +957,18 @@ export default function App() {
     const targetLine = currentSession.lines.find((line) => line.lineId === lineId);
     if (!targetLine) return;
 
+    const lineNumber = targetLine.lineNumber - 1;
+    const lockState = lineLocksRef.current.get(lineNumber);
+    const shouldLogEdit = lockState ? !lockState.hasLoggedEdit : true;
+    if (lockState) {
+      lockState.hasLoggedEdit = true;
+    }
+
     documentApi.update({
       documentId: currentSession.documentId,
-      lineNumber: targetLine.lineNumber - 1,
+      lineNumber,
       text: nextText,
+      logEdit: shouldLogEdit,
     });
 
     const nextLines = currentSession.lines.map((line) =>

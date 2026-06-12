@@ -56,10 +56,6 @@ public class DocumentRepository {
                         .forEach(this::loadDocumentFile);
             }
 
-            if (documents.isEmpty()) {
-                Document seed = new Document(idSequence.getAndIncrement(), "공유 문서", "system");
-                documents.put(seed.getDocumentId(), seed);
-            }
         } catch (IOException ex) {
             throw new UncheckedIOException("문서 저장소를 초기화할 수 없습니다.", ex);
         }

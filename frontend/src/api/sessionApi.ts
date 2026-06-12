@@ -94,6 +94,13 @@ export const sessionApi = {
     );
   },
 
+  leaveDocument(documentId: number, request: { username: string }) {
+    return postJson<{ username: string }, DocumentSnapshotResponse>(
+      `/api/documents/${documentId}/leave`,
+      request,
+    );
+  },
+
   getActiveSessions() {
     return requestJson<TextSessionItem[]>("/api/sessions/active");
   },

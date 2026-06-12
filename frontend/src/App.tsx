@@ -241,6 +241,8 @@ export default function App() {
   const [lockNotice, setLockNotice] = useState<string>("편집할 줄을 선택하세요.");
   const [socketReady, setSocketReady] = useState(false);
   const [loginPending, setLoginPending] = useState(false);
+  const [toastQueue, setToastQueue] = useState<{ id: number; message: string; type: "success" | "warning" }[]>([]);
+  const toastIdRef = useRef(0);
   const [loginError, setLoginError] = useState<string | null>(null);
   const clientIdRef = useRef(createClientId());
   const lamportClockRef = useRef(0);
@@ -631,6 +633,13 @@ export default function App() {
           eventLogs: [...session.eventLogs, nextEvent],
         })),
       );
+
+      const id = ++toastIdRef.current;
+      const toastType = notification.status === "LEFT" ? "warning" : "success" as const;
+      setToastQueue((prev) => [...prev, { id, message: notification.message, type: toastType }]);
+      setTimeout(() => {
+        setToastQueue((prev) => prev.filter((t) => t.id !== id));
+      }, 4000);
     });
 
     return () => {
@@ -1056,6 +1065,7 @@ export default function App() {
       <SessionEntryPage
         username={username}
         sessions={sessions}
+        toasts={toastQueue}
         onCreateBlank={handleCreateBlankSession}
         onJoinSession={handleJoinSession}
         onOpenEditor={openEditor}
@@ -1075,6 +1085,7 @@ export default function App() {
         onHome={() => {
           releaseAllLineLocks();
           setSelectedLineId(null);
+          sessionApi.leaveDocument(currentDocumentId, { username }).catch(() => {});
           setScreen("sessionEntry");
         }}
         onLogout={() => {

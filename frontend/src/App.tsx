@@ -16,7 +16,6 @@ import type {
 import type {
   DocumentSnapshotResponse,
   DocumentSummaryResponse,
-  SavedFileInfo,
 } from "./api/sessionApi";
 import { DocumentLine, TextSessionState } from "./types";
 import type { EventLogMessage, Participant } from "./types";
@@ -143,15 +142,17 @@ function mapDocumentUpdateToSession(
           type: logEntry.operation === "DELETE" ? "warning" : "info",
         };
 
-    return {
-      ...session,
-      lines: nextLines,
-      eventLogs:
-        logEntry == null ? session.eventLogs : [...session.eventLogs, nextLog],
-      lastEditor: notification.username,
-      saveStatus: "저장 필요",
-    };
-  }
+  return {
+    ...session,
+    lines: nextLines,
+    eventLogs:
+      logEntry == null
+        ? session.eventLogs
+        : [...session.eventLogs, nextLog],
+    lastEditor: notification.username,
+    saveStatus: "저장 필요",
+  };
+}
 
 function mapDocumentPresenceToSession(
   session: TextSessionState,
@@ -238,7 +239,6 @@ export default function App() {
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [editableLineId, setEditableLineId] = useState<string | null>(null);
   const [lockNotice, setLockNotice] = useState<string>("편집할 줄을 선택하세요.");
-  const [savedFiles, setSavedFiles] = useState<SavedFileInfo[]>([]);
   const [socketReady, setSocketReady] = useState(false);
   const [loginPending, setLoginPending] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -737,21 +737,6 @@ export default function App() {
     }
   }, [screen, username]);
 
-  const loadSavedFiles = async () => {
-    try {
-      const files = await sessionApi.getSavedFiles();
-      setSavedFiles(files);
-    } catch (error) {
-      console.error("저장된 파일 목록을 불러오지 못했습니다.", error);
-    }
-  };
-
-  useEffect(() => {
-    if (screen === "sessionEntry") {
-      void loadSavedFiles();
-    }
-  }, [screen]);
-
   const clearLoginSubscription = () => {
     if (loginSubscriptionRef.current) {
       stompClient.unsubscribe(loginSubscriptionRef.current);
@@ -885,15 +870,6 @@ export default function App() {
     anchor.click();
 
     URL.revokeObjectURL(url);
-  };
-
-  const handleLoadSavedSession = async (documentId: number) => {
-    try {
-      releaseAllLineLocks();
-      await openDocument(documentId, false);
-    } catch (error) {
-      console.error("저장된 세션을 불러오지 못했습니다.", error);
-    }
   };
 
   const handleLineSelect = (lineId: string) => {
@@ -1048,11 +1024,9 @@ export default function App() {
       <SessionEntryPage
         username={username}
         sessions={sessions}
-        savedFiles={savedFiles}
         onCreateBlank={handleCreateBlankSession}
         onJoinSession={handleJoinSession}
         onOpenEditor={openEditor}
-        onLoadSavedSession={handleLoadSavedSession}
       />
     );
   }

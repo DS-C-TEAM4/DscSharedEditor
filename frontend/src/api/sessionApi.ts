@@ -95,12 +95,10 @@ export const sessionApi = {
   },
 
   getActiveSessions() {
-    // TODO(server): 여러 텍스트 세션 목록 조회 API 필요
     return requestJson<TextSessionItem[]>("/api/sessions/active");
   },
 
   createSession(request: CreateSessionRequest) {
-    // TODO(server): documentId 생성과 초기 줄 상태 생성 담당
     return postJson<CreateSessionRequest, SessionResponse>(
       "/api/sessions/create",
       request,
@@ -108,7 +106,6 @@ export const sessionApi = {
   },
 
   joinSession(request: JoinSessionRequest) {
-    // TODO(server): Late-comer가 현재 문서 상태 전체를 받도록 응답 구조 조정 필요
     return postJson<JoinSessionRequest, SessionResponse>(
       "/api/sessions/join",
       request,
@@ -116,7 +113,6 @@ export const sessionApi = {
   },
 
   saveSession(request: SaveSessionRequest) {
-    // TODO(server): 서버가 현재 세션을 JSON 파일로 저장하고 파일명 반환
     return postJson<SaveSessionRequest, SaveSessionResponse>(
       "/api/sessions/save",
       request,

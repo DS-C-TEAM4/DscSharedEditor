@@ -1,25 +1,20 @@
 import { useState } from "react";
-import { SavedFileInfo } from "../../api/sessionApi";
 import { TextSessionItem } from "../../types";
 
 interface SessionEntryPageProps {
   username: string;
   sessions: TextSessionItem[];
-  savedFiles: SavedFileInfo[];
   onCreateBlank: () => void;
   onJoinSession: (documentId: number) => void;
   onOpenEditor: (documentId: number) => void;
-  onLoadSavedSession: (documentId: number) => void;
 }
 
 export function SessionEntryPage({
   username,
   sessions,
-  savedFiles,
   onCreateBlank,
   onJoinSession,
   onOpenEditor,
-  onLoadSavedSession,
 }: SessionEntryPageProps) {
   const [documentIdInput, setDocumentIdInput] = useState("38172946");
 
@@ -63,27 +58,6 @@ export function SessionEntryPage({
           </div>
         </article>
 
-        <article className="entry-card">
-          <h2>세션 저장 파일</h2>
-          <p>서버에 저장된 JSON 파일에서 세션을 불러오는 흐름입니다.</p>
-          <div className="saved-file-list">
-            {savedFiles.length === 0 ? (
-              <p className="muted">저장된 파일이 없습니다.</p>
-            ) : (
-              savedFiles.map((file) => (
-                <button
-                  className="saved-file-item"
-                  key={file.fileName}
-                  onClick={() => onLoadSavedSession(file.documentId)}
-                >
-                  <strong>{file.title}</strong>
-                  <span className="doc-number">#{file.documentId}</span>
-                  <span className="muted">{file.updatedAt}</span>
-                </button>
-              ))
-            )}
-          </div>
-        </article>
       </section>
 
       <section className="active-session-section">
